@@ -213,16 +213,21 @@ class GoogleAuthPage(QWizardPage):
         content_layout.addWidget(self.qr_label)
         
         # Instructions
-        inst_frame = QFrame()
-        inst_frame.setStyleSheet("""
-            QFrame {
+        self.inst_frame = QFrame()
+        self.inst_frame.setObjectName("instFrame")
+        self.inst_frame.setStyleSheet("""
+            QFrame#instFrame {
                 background-color: #f9f9f9;
                 border: 1px solid #dddddd;
                 border-radius: 5px;
                 padding: 15px;
             }
+            QLabel {
+                border: none;
+                background: transparent;
+            }
         """)
-        inst_layout = QVBoxLayout(inst_frame)
+        inst_layout = QVBoxLayout(self.inst_frame)
         inst_layout.setSpacing(5)
         
         inst_title = QLabel("✓ QR Code Generated!")
@@ -253,7 +258,10 @@ class GoogleAuthPage(QWizardPage):
         inst_layout.addWidget(self.secret_label)
         
         inst_layout.addStretch()
-        content_layout.addWidget(inst_frame)
+        content_layout.addWidget(self.inst_frame)
+        
+        # Hide instructions initially
+        self.inst_frame.setVisible(False)
         
         layout.addLayout(content_layout)
         
@@ -261,12 +269,17 @@ class GoogleAuthPage(QWizardPage):
         
         # Verification
         verify_frame = QFrame()
+        verify_frame.setObjectName("verifyFrame")
         verify_frame.setStyleSheet("""
-            QFrame {
+            QFrame#verifyFrame {
                 background-color: #ffffff;
                 border: 1px solid #dddddd;
                 border-radius: 5px;
                 padding: 15px;
+            }
+            QLabel {
+                border: none;
+                background: transparent;
             }
         """)
         verify_layout = QVBoxLayout(verify_frame)
@@ -349,6 +362,9 @@ class GoogleAuthPage(QWizardPage):
         self.qr_label.setPixmap(pixmap)
         self.secret_label.setText(f"Secret: {self.secret}")
         
+        # Show instructions
+        self.inst_frame.setVisible(True)
+        
         self.generate_btn.setText("Regenerate QR Code")
     
     def _on_digit_entered(self, text, index):
@@ -392,6 +408,7 @@ class FaceVerificationPage(QWizardPage):
         
         self.face_verifier = FaceVerification()
         self.camera_thread = None
+        self.capture_timer = None
         self.photos_taken = 0
         self.target_photos = 10
         self.current_frame = None
