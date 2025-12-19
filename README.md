@@ -4,8 +4,6 @@ BreakGuard is a Windows 11 health-discipline application that enforces regular b
 
 It is designed for people who work 10–15+ hours continuously on computers and want a non-cheatable, habit-forming system to protect their health.
 
-**Repository:** [https://github.com/ProgrammerNomad/BreakGuard](https://github.com/ProgrammerNomad/BreakGuard)
-
 ## Why BreakGuard?
 
 Most reminders are easy to ignore.
