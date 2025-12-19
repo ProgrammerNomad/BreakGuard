@@ -18,14 +18,16 @@ class CameraThread(QThread):
     """Thread for camera capture"""
     frame_ready = pyqtSignal(object)
     
-    def __init__(self):
+    def __init__(self, camera_index=0):
         super().__init__()
         self.running = False
         self.camera = None
+        self.camera_index = camera_index
     
     def run(self):
         """Run camera capture loop"""
-        self.camera = cv2.VideoCapture(0)
+        # Use CAP_DSHOW for Windows compatibility
+        self.camera = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
         self.running = True
         
         while self.running:
@@ -290,7 +292,8 @@ class LockScreen(QWidget):
     def _start_face_scan(self):
         """Start camera for face scanning"""
         if not self.camera_thread:
-            self.camera_thread = CameraThread()
+            camera_idx = int(self.config.get('camera_index', 0))
+            self.camera_thread = CameraThread(camera_idx)
             self.camera_thread.frame_ready.connect(self._on_camera_frame)
             self.camera_thread.start()
             

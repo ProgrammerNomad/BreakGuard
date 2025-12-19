@@ -20,13 +20,15 @@ class CameraThread(QThread):
     """Thread for camera capture during face registration"""
     frame_ready = pyqtSignal(object)
     
-    def __init__(self):
+    def __init__(self, camera_index=0):
         super().__init__()
         self.running = False
         self.camera = None
+        self.camera_index = camera_index
     
     def run(self):
-        self.camera = cv2.VideoCapture(0)
+        # Use CAP_DSHOW for Windows compatibility
+        self.camera = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
         self.running = True
         
         while self.running:
@@ -403,6 +405,16 @@ class FaceVerificationPage(QWizardPage):
         self.enable_check.stateChanged.connect(self._on_toggle_enabled)
         layout.addWidget(self.enable_check)
         
+        # Camera Selection
+        cam_layout = QHBoxLayout()
+        cam_label = QLabel("Select Camera:")
+        self.cam_combo = QComboBox()
+        self.cam_combo.addItems([f"Camera {i}" for i in range(5)])
+        cam_layout.addWidget(cam_label)
+        cam_layout.addWidget(self.cam_combo)
+        cam_layout.addStretch()
+        layout.addLayout(cam_layout)
+        
         # Camera preview
         self.camera_label = QLabel("Camera preview will appear here")
         self.camera_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -435,6 +447,7 @@ class FaceVerificationPage(QWizardPage):
         self.setLayout(layout)
         
         self.registerField("face_enabled", self.enable_check)
+        self.registerField("camera_index", self.cam_combo)
     
     def _on_toggle_enabled(self, state):
         """Handle enable checkbox toggle"""
@@ -443,11 +456,13 @@ class FaceVerificationPage(QWizardPage):
     def _start_capture(self):
         """Start camera capture"""
         if not self.camera_thread:
-            self.camera_thread = CameraThread()
+            camera_idx = self.cam_combo.currentIndex()
+            self.camera_thread = CameraThread(camera_idx)
             self.camera_thread.frame_ready.connect(self._on_camera_frame)
             self.camera_thread.start()
             
             self.capture_btn.setText("Stop Capture")
+            self.cam_combo.setEnabled(False)  # Disable selection while capturing
             self.status_label.setText("Status: Capturing...")
             
             # Start auto-capture timer
@@ -506,6 +521,7 @@ class FaceVerificationPage(QWizardPage):
             self.camera_thread = None
         
         self.capture_btn.setText("Start Capture")
+        self.cam_combo.setEnabled(True)  # Re-enable selection
         self.camera_label.clear()
         self.camera_label.setText("Camera preview will appear here")
     
@@ -766,6 +782,7 @@ class SetupWizard(QWizard):
             config.set('warning_before_minutes', self.field("warning_time"))
             config.set('totp_enabled', self.field("totp_enabled"))
             config.set('face_verification_enabled', self.field("face_enabled"))
+            config.set('camera_index', self.field("camera_index"))
             config.set('tinxy_enabled', self.field("tinxy_enabled"))
             config.set('tinxy_api_key', self.field("tinxy_api_key"))
             config.set('tinxy_device_id', self.field("tinxy_device_id"))

@@ -220,7 +220,8 @@ class FaceVerification:
             VideoCapture object or None
         """
         try:
-            cap = cv2.VideoCapture(camera_index)
+            # Use CAP_DSHOW for Windows compatibility
+            cap = cv2.VideoCapture(camera_index, cv2.CAP_DSHOW)
             if cap.isOpened():
                 return cap
         except Exception as e:
