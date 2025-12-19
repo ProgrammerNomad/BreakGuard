@@ -12,8 +12,14 @@ class SetupWizard:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("BreakGuard Setup Wizard")
-        self.root.geometry("700x550")
-        self.root.resizable(False, False)
+        self.root.geometry("900x650")
+        self.root.minsize(850, 600)
+        self.root.resizable(True, True)
+        # Normalize DPI scaling so rendered pixels (like QR) match expected sizes
+        try:
+            self.root.tk.call('tk', 'scaling', 1.0)
+        except Exception:
+            pass
         
         # Colors
         self.bg_color = "#f5f5f5"
@@ -39,6 +45,9 @@ class SetupWizard:
         self.totp_auth = None
         self.face_verif = None
         self.totp_verified = False
+        self.qr_base_img = None  # Stored PIL image for responsive resizing
+        self.qr_photo = None     # Current PhotoImage shown on canvas
+        self._qr_resize_job = None
         
         # Steps
         self.steps = [
@@ -74,11 +83,10 @@ class SetupWizard:
         
         self.progress = ttk.Progressbar(
             progress_frame,
-            length=640,
             mode='determinate',
             maximum=len(self.steps)
         )
-        self.progress.pack()
+        self.progress.pack(fill=tk.X, expand=True)
         self.progress['value'] = 1
     
     def _create_navigation(self):
@@ -345,98 +353,136 @@ class SetupWizard:
         self.totp_setup_frame = tk.Frame(self.content_frame, bg=self.bg_color)
         self.totp_setup_frame.pack(fill=tk.BOTH, expand=True, pady=20)
         
-        # Generate TOTP button
+        # Generate TOTP button - centered and styled
+        btn_container = tk.Frame(self.totp_setup_frame, bg=self.bg_color)
+        btn_container.pack(pady=(0, 20))
+        
         self.generate_totp_btn = tk.Button(
-            self.totp_setup_frame,
+            btn_container,
             text="Generate QR Code",
-            font=("Helvetica", 11, "bold"),
+            font=("Helvetica", 12, "bold"),
             bg=self.accent_color,
             fg="white",
-            padx=20,
-            pady=10,
+            padx=30,
+            pady=12,
             command=self._generate_totp,
             cursor="hand2",
             relief=tk.FLAT
         )
-        self.generate_totp_btn.pack(pady=10)
+        self.generate_totp_btn.pack()
         
-        # QR code display area with border for visibility
-        qr_container = tk.Frame(
-            self.totp_setup_frame,
+        # Main content container with side-by-side layout
+        content_container = tk.Frame(self.totp_setup_frame, bg=self.bg_color)
+        content_container.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        # LEFT SIDE - QR Code Section
+        qr_section = tk.Frame(content_container, bg=self.bg_color)
+        qr_section.pack(side=tk.LEFT, padx=(40, 30))
+        
+        # QR Code with clean border
+        qr_container = tk.Frame(qr_section, bg="white", relief=tk.SOLID, borderwidth=1)
+        qr_container.pack()
+        
+        self.qr_canvas = tk.Canvas(
+            qr_container,
+            width=320,
+            height=320,
             bg="white",
-            relief=tk.SOLID,
-            borderwidth=2,
-            width=360,
-            height=360
+            highlightthickness=0,
+            borderwidth=0
         )
-        qr_container.pack(pady=10)
-        qr_container.pack_propagate(False)  # Prevent resizing
+        self.qr_canvas.pack(padx=10, pady=10)
         
-        self.qr_label = tk.Label(qr_container, bg="white")
-        self.qr_label.pack(expand=True)
+        # RIGHT SIDE - Instructions and Verification
+        info_section = tk.Frame(content_container, bg=self.bg_color)
+        info_section.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 40))
         
-        # Instructions
+        # Instructions header
         self.totp_instructions = tk.Label(
-            self.totp_setup_frame,
+            info_section,
             text="",
-            font=("Helvetica", 9),
+            font=("Helvetica", 10),
             bg=self.bg_color,
-            fg="#666666",
-            justify=tk.LEFT
+            fg="#555555",
+            justify=tk.LEFT,
+            anchor=tk.NW,
+            wraplength=380
         )
-        self.totp_instructions.pack(pady=10)
+        self.totp_instructions.pack(pady=(0, 25), fill=tk.X)
         
-        # Verification section (initially hidden)
-        self.verify_frame = tk.Frame(self.totp_setup_frame, bg=self.bg_color)
+        # Verification section with card-like appearance
+        self.verify_frame = tk.Frame(info_section, bg="white", relief=tk.SOLID, borderwidth=1)
         
+        # Inner padding frame
+        verify_inner = tk.Frame(self.verify_frame, bg="white")
+        verify_inner.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Title
         tk.Label(
-            self.verify_frame,
-            text="🔐 Verify Setup - Enter code from your app:",
-            font=("Helvetica", 11, "bold"),
-            bg=self.bg_color,
+            verify_inner,
+            text="🔐 Verify Your Setup",
+            font=("Helvetica", 13, "bold"),
+            bg="white",
             fg=self.text_color
-        ).pack(pady=(20, 5))
+        ).pack(pady=(0, 8), anchor=tk.W)
         
-        verify_input_frame = tk.Frame(self.verify_frame, bg=self.bg_color)
-        verify_input_frame.pack(pady=10)
+        # Description
+        tk.Label(
+            verify_inner,
+            text="Enter the 6-digit code from Google Authenticator:",
+            font=("Helvetica", 10),
+            bg="white",
+            fg="#666666"
+        ).pack(pady=(0, 15), anchor=tk.W)
         
+        # Entry field
         self.verify_code_entry = tk.Entry(
-            verify_input_frame,
-            font=("Helvetica", 18),
+            verify_inner,
+            font=("Helvetica", 20, "bold"),
             width=10,
-            justify=tk.CENTER
+            justify=tk.CENTER,
+            relief=tk.SOLID,
+            borderwidth=1,
+            fg=self.text_color
         )
-        self.verify_code_entry.pack(side=tk.LEFT, padx=5)
+        self.verify_code_entry.pack(pady=(0, 15))
         
+        # Verify button
         self.verify_btn = tk.Button(
-            verify_input_frame,
-            text="Verify",
+            verify_inner,
+            text="Verify Code",
             font=("Helvetica", 11, "bold"),
             bg=self.accent_color,
             fg="white",
-            padx=20,
-            pady=8,
+            padx=40,
+            pady=12,
             command=self._verify_totp_code,
             cursor="hand2",
             relief=tk.FLAT
         )
-        self.verify_btn.pack(side=tk.LEFT, padx=5)
+        self.verify_btn.pack(pady=(0, 10))
         
+        # Status message
         self.verify_status = tk.Label(
-            self.verify_frame,
+            verify_inner,
             text="",
             font=("Helvetica", 10),
-            bg=self.bg_color
+            bg="white",
+            wraplength=340
         )
-        self.verify_status.pack(pady=5)
+        self.verify_status.pack(pady=(5, 0))
         
+        # Timer hint
         tk.Label(
-            self.verify_frame,
-            text="💡 The code changes every 30 seconds",
-            font=("Helvetica", 8),
-            bg=self.bg_color,
-            fg="#666666"
-        ).pack(pady=2)
+            verify_inner,
+            text="💡 Code changes every 30 seconds",
+            font=("Helvetica", 9),
+            bg="white",
+            fg="#999999"
+        ).pack(pady=(10, 0))
+        
+        # Resize QR responsively when window changes
+        self.root.bind("<Configure>", lambda event: self._schedule_qr_resize())
     
     def _toggle_totp_setup(self):
         """Toggle TOTP setup visibility"""
@@ -453,31 +499,17 @@ class SetupWizard:
         
         def generate():
             self.totp_auth = TOTPAuth()
-            qr_img = self.totp_auth.generate_qr_code()
-
-            base_size = 280
-            canvas_size = 320
-            qr_img = qr_img.convert("RGB").resize(
-                (base_size, base_size),
-                Image.Resampling.NEAREST
-            )
-            canvas = Image.new("RGB", (canvas_size, canvas_size), "white")
-            offset = (canvas_size - base_size) // 2
-            canvas.paste(qr_img, (offset, offset))
-            
-            photo = ImageTk.PhotoImage(canvas)
-            self.root.after(0, lambda: self._display_qr_code(photo))
+            self.qr_base_img = self.totp_auth.generate_qr_code().convert("RGB")
+            self.root.after(0, self._display_qr_code)
         
         threading.Thread(target=generate, daemon=True).start()
     
-    def _display_qr_code(self, photo):
+    def _display_qr_code(self):
         """Display QR code"""
-        self.qr_label.config(image=photo)
-        self.qr_label.image = photo  # Keep reference
+        self._render_qr_canvas()
         self.generate_totp_btn.config(state=tk.NORMAL, text="Regenerate QR Code")
         
-        instructions = """
-✓ QR Code Generated!
+        instructions = """✓ QR Code Generated!
 
 1. Install Google Authenticator on your phone
 2. Open the app and tap the '+' button
@@ -485,10 +517,7 @@ class SetupWizard:
 4. Point your camera at the code above
 5. A 6-digit code will appear in the app
 
-Secret Key (for manual entry if QR scan fails):
-{}
-
-Save this secret key somewhere safe!
+Secret Key (for manual entry): {}
         """.format(self.totp_auth.get_secret() if self.totp_auth else "")
         
         self.totp_instructions.config(text=instructions)
@@ -497,6 +526,35 @@ Save this secret key somewhere safe!
         # Show verification section
         self.verify_frame.pack(fill=tk.BOTH, pady=20)
         self.totp_verified = False
+        self._schedule_qr_resize()
+        
+    def _compute_qr_size(self):
+        """Compute a square size for the QR area based on available width."""
+        # Fixed size for clean side-by-side layout
+        size = 320
+        return int(size)
+
+    def _render_qr_canvas(self):
+        """Render QR into the canvas at the computed square size."""
+        if not self.qr_base_img:
+            return
+        size = self._compute_qr_size()
+        inner = max(200, size - 12)  # allow border/padding
+        qr_img = self.qr_base_img.resize((inner, inner), Image.Resampling.NEAREST)
+        self.qr_canvas.config(width=size, height=size)
+        self.qr_canvas.delete("all")
+        center = size // 2
+        photo = ImageTk.PhotoImage(qr_img)
+        self.qr_photo = photo
+        self.qr_canvas.create_image(center, center, image=photo)
+
+    def _schedule_qr_resize(self):
+        """Debounce resize events to rerender QR once layout settles."""
+        if not self.qr_base_img:
+            return
+        if self._qr_resize_job:
+            self.root.after_cancel(self._qr_resize_job)
+        self._qr_resize_job = self.root.after(100, self._render_qr_canvas)
     
     def _verify_totp_code(self):
         """Verify the TOTP code entered by user"""

@@ -16,7 +16,7 @@ from totp_auth import TOTPAuth
 from face_verification import FaceVerification
 from lock_screen import LockScreen, SimpleLockScreen
 from windows_startup import WindowsStartup
-from setup_wizard_gui import SetupWizard
+from setup_wizard_gui_pyqt import SetupWizard, run_setup_wizard
 from settings_gui import SettingsWindow
 
 import pystray
@@ -262,8 +262,7 @@ class BreakGuard:
 
 def setup_wizard():
     """First-time setup wizard with GUI"""
-    wizard = SetupWizard()
-    wizard.run()
+    run_setup_wizard()
 
 def main():
     """Main entry point"""
