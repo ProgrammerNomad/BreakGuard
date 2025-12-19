@@ -38,6 +38,7 @@ class SetupWizard:
         self.current_step = 0
         self.totp_auth = None
         self.face_verif = None
+        self.totp_verified = False
         
         # Steps
         self.steps = [
@@ -155,7 +156,23 @@ class SetupWizard:
     
     def _validate_step(self, step_num):
         """Validate step before proceeding"""
-        # Add validation logic for each step if needed
+        # Step 2 is TOTP setup
+        if step_num == 2 and self.totp_enabled_var.get():
+            if not hasattr(self, 'totp_auth') or self.totp_auth is None:
+                messagebox.showwarning(
+                    "Setup Required",
+                    "Please click 'Generate QR Code' to set up Google Authenticator."
+                )
+                return False
+            
+            if not hasattr(self, 'totp_verified') or not self.totp_verified:
+                messagebox.showwarning(
+                    "Verification Required",
+                    "Please verify your TOTP setup by entering the 6-digit code from Google Authenticator app.\n\n"
+                    "This ensures your authentication is working correctly!"
+                )
+                return False
+        
         return True
     
     def _create_welcome_step(self):
@@ -343,12 +360,20 @@ class SetupWizard:
         )
         self.generate_totp_btn.pack(pady=10)
         
-        # QR code display area
-        self.qr_label = tk.Label(
+        # QR code display area with border for visibility
+        qr_container = tk.Frame(
             self.totp_setup_frame,
-            bg=self.bg_color
+            bg="white",
+            relief=tk.SOLID,
+            borderwidth=2,
+            width=360,
+            height=360
         )
-        self.qr_label.pack(pady=10)
+        qr_container.pack(pady=10)
+        qr_container.pack_propagate(False)  # Prevent resizing
+        
+        self.qr_label = tk.Label(qr_container, bg="white")
+        self.qr_label.pack(expand=True)
         
         # Instructions
         self.totp_instructions = tk.Label(
@@ -360,6 +385,58 @@ class SetupWizard:
             justify=tk.LEFT
         )
         self.totp_instructions.pack(pady=10)
+        
+        # Verification section (initially hidden)
+        self.verify_frame = tk.Frame(self.totp_setup_frame, bg=self.bg_color)
+        
+        tk.Label(
+            self.verify_frame,
+            text="🔐 Verify Setup - Enter code from your app:",
+            font=("Helvetica", 11, "bold"),
+            bg=self.bg_color,
+            fg=self.text_color
+        ).pack(pady=(20, 5))
+        
+        verify_input_frame = tk.Frame(self.verify_frame, bg=self.bg_color)
+        verify_input_frame.pack(pady=10)
+        
+        self.verify_code_entry = tk.Entry(
+            verify_input_frame,
+            font=("Helvetica", 18),
+            width=10,
+            justify=tk.CENTER
+        )
+        self.verify_code_entry.pack(side=tk.LEFT, padx=5)
+        
+        self.verify_btn = tk.Button(
+            verify_input_frame,
+            text="Verify",
+            font=("Helvetica", 11, "bold"),
+            bg=self.accent_color,
+            fg="white",
+            padx=20,
+            pady=8,
+            command=self._verify_totp_code,
+            cursor="hand2",
+            relief=tk.FLAT
+        )
+        self.verify_btn.pack(side=tk.LEFT, padx=5)
+        
+        self.verify_status = tk.Label(
+            self.verify_frame,
+            text="",
+            font=("Helvetica", 10),
+            bg=self.bg_color
+        )
+        self.verify_status.pack(pady=5)
+        
+        tk.Label(
+            self.verify_frame,
+            text="💡 The code changes every 30 seconds",
+            font=("Helvetica", 8),
+            bg=self.bg_color,
+            fg="#666666"
+        ).pack(pady=2)
     
     def _toggle_totp_setup(self):
         """Toggle TOTP setup visibility"""
@@ -375,17 +452,20 @@ class SetupWizard:
         self.generate_totp_btn.config(state=tk.DISABLED, text="Generating...")
         
         def generate():
-            # Generate TOTP
             self.totp_auth = TOTPAuth()
             qr_img = self.totp_auth.generate_qr_code()
+
+            base_size = 280
+            canvas_size = 320
+            qr_img = qr_img.convert("RGB").resize(
+                (base_size, base_size),
+                Image.Resampling.NEAREST
+            )
+            canvas = Image.new("RGB", (canvas_size, canvas_size), "white")
+            offset = (canvas_size - base_size) // 2
+            canvas.paste(qr_img, (offset, offset))
             
-            # Resize for display
-            qr_img = qr_img.resize((200, 200))
-            
-            # Convert to PhotoImage
-            photo = ImageTk.PhotoImage(qr_img)
-            
-            # Update UI in main thread
+            photo = ImageTk.PhotoImage(canvas)
             self.root.after(0, lambda: self._display_qr_code(photo))
         
         threading.Thread(target=generate, daemon=True).start()
@@ -394,20 +474,67 @@ class SetupWizard:
         """Display QR code"""
         self.qr_label.config(image=photo)
         self.qr_label.image = photo  # Keep reference
+        self.generate_totp_btn.config(state=tk.NORMAL, text="Regenerate QR Code")
         
         instructions = """
-1. Install Google Authenticator on your phone
-2. Open the app and tap '+'
-3. Scan this QR code
-4. The app will show a 6-digit code
-5. You'll need this code to unlock during breaks
+✓ QR Code Generated!
 
-Secret Key (for manual entry):
+1. Install Google Authenticator on your phone
+2. Open the app and tap the '+' button
+3. Select 'Scan a QR code'
+4. Point your camera at the code above
+5. A 6-digit code will appear in the app
+
+Secret Key (for manual entry if QR scan fails):
 {}
+
+Save this secret key somewhere safe!
         """.format(self.totp_auth.get_secret() if self.totp_auth else "")
         
         self.totp_instructions.config(text=instructions)
         self.config_data['totp_secret'] = self.totp_auth.get_secret()
+        
+        # Show verification section
+        self.verify_frame.pack(fill=tk.BOTH, pady=20)
+        self.totp_verified = False
+    
+    def _verify_totp_code(self):
+        """Verify the TOTP code entered by user"""
+        if not self.totp_auth:
+            self.verify_status.config(
+                text="❌ Please generate QR code first",
+                fg="#ff4757"
+            )
+            return
+        
+        code = self.verify_code_entry.get().strip()
+        
+        if not code:
+            self.verify_status.config(
+                text="❌ Please enter the 6-digit code",
+                fg="#ff4757"
+            )
+            return
+        
+        # Verify the code
+        if self.totp_auth.verify_code(code):
+            self.verify_status.config(
+                text="✅ Verified! Google Authenticator is connected correctly!",
+                fg="#2ed573"
+            )
+            self.verify_btn.config(state=tk.DISABLED, bg="#2ed573")
+            self.verify_code_entry.config(state=tk.DISABLED)
+            self.totp_verified = True
+            
+            # Auto-advance after 1.5 seconds
+            self.root.after(1500, lambda: self._go_next() if self.current_step == 2 else None)
+        else:
+            self.verify_status.config(
+                text="❌ Invalid code. Make sure you scanned the correct QR code.",
+                fg="#ff4757"
+            )
+            self.verify_code_entry.delete(0, tk.END)
+            self.totp_verified = False
     
     def _create_face_step(self):
         """Setup face verification"""
