@@ -12,10 +12,12 @@ sys.path.insert(0, str(Path(__file__).parent / 'src'))
 from config_manager import ConfigManager
 from tinxy_api import TinxyAPI, MonitorController
 from work_timer import WorkTimer
-from totp_auth import TOTPAuth, TOTPSetup
+from totp_auth import TOTPAuth
 from face_verification import FaceVerification
 from lock_screen import LockScreen, SimpleLockScreen
 from windows_startup import WindowsStartup
+from setup_wizard_gui import SetupWizard
+from settings_gui import SettingsWindow
 
 import pystray
 from PIL import Image, ImageDraw
@@ -220,8 +222,14 @@ class BreakGuard:
     
     def _show_settings(self):
         """Show settings dialog"""
-        print("Settings dialog not yet implemented")
-        # TODO: Create settings GUI
+        settings = SettingsWindow(on_save=self._on_settings_saved)
+        settings.show()
+    
+    def _on_settings_saved(self):
+        """Called when settings are saved"""
+        # Reload configuration
+        self.config = ConfigManager()
+        print("Settings updated. Changes will take effect on next break cycle.")
     
     def _exit_app(self):
         """Exit the application"""
@@ -253,97 +261,45 @@ class BreakGuard:
         self.tray_icon.run()
 
 def setup_wizard():
-    """First-time setup wizard"""
-    print("\n" + "="*60)
-    print(" BreakGuard - First Time Setup")
-    print("="*60 + "\n")
-    
-    config = ConfigManager()
-    
-    # Configure work interval
-    print("1. Configure Work Interval")
-    work_interval = input(f"  Work interval in minutes (default: 60): ").strip()
-    if work_interval.isdigit():
-        config.set('work_interval_minutes', int(work_interval))
-    
-    warning_before = input(f"  Warning before lock in minutes (default: 5): ").strip()
-    if warning_before.isdigit():
-        config.set('warning_before_minutes', int(warning_before))
-    
-    # Configure TOTP
-    print("\n2. Configure Google Authenticator (TOTP)")
-    setup_totp = input("  Setup TOTP authentication? (y/n): ").strip().lower()
-    
-    if setup_totp == 'y':
-        totp_auth, qr_path = TOTPSetup.first_time_setup()
-        
-        print(f"\n  QR Code saved to: {qr_path}")
-        print("  Scan this with Google Authenticator app")
-        input("\n  Press Enter when you've scanned the QR code...")
-        
-        if TOTPSetup.verify_setup(totp_auth):
-            config.set('totp_secret', totp_auth.get_secret())
-            config.set('auth_enabled', True)
-        else:
-            print("  Setup incomplete - you can configure this later")
-            config.set('auth_enabled', False)
-    else:
-        config.set('auth_enabled', False)
-    
-    # Configure Face Verification
-    print("\n3. Configure Face Verification")
-    setup_face = input("  Setup face verification? (y/n): ").strip().lower()
-    
-    if setup_face == 'y':
-        face_verif = FaceVerification()
-        if face_verif.register_face():
-            config.set('face_verification', True)
-        else:
-            print("  Face registration failed - you can configure this later")
-            config.set('face_verification', False)
-    else:
-        config.set('face_verification', False)
-    
-    # Configure Tinxy API
-    print("\n4. Configure Tinxy API (Optional)")
-    setup_tinxy = input("  Setup Tinxy API for monitor control? (y/n): ").strip().lower()
-    
-    if setup_tinxy == 'y':
-        api_key = input("  Tinxy API Key: ").strip()
-        device_id = input("  Tinxy Device ID: ").strip()
-        device_number = input("  Device Number (default: 1): ").strip()
-        
-        if api_key and device_id:
-            config.set('tinxy_api_key', api_key)
-            config.set('tinxy_device_id', device_id)
-            config.set('tinxy_device_number', int(device_number) if device_number.isdigit() else 1)
-    
-    # Save configuration
-    config.save_config()
-    
-    print("\n" + "="*60)
-    print(" Setup Complete!")
-    print("="*60)
-    print("\n✓ Configuration saved")
-    print("✓ BreakGuard is ready to use")
-    print("\nRun 'python main.py' to start BreakGuard\n")
+    """First-time setup wizard with GUI"""
+    wizard = SetupWizard()
+    wizard.run()
 
 def main():
     """Main entry point"""
     # Check if this is first run
     config = ConfigManager()
     
+    # Handle setup argument
     if len(sys.argv) > 1 and sys.argv[1] == '--setup':
         setup_wizard()
         return
     
-    # Check if TOTP is configured
-    if not config.get('totp_secret') and config.get('auth_enabled', True):
-        print("\n⚠ TOTP authentication not configured")
-        print("Run 'python main.py --setup' to configure BreakGuard\n")
+    # Check if configuration exists (first run)
+    if not config.get('totp_secret'):
+        import tkinter as tk
+        from tkinter import messagebox
         
-        proceed = input("Continue without TOTP? (y/n): ").strip().lower()
-        if proceed != 'y':
+        root = tk.Tk()
+        root.withdraw()
+        
+        result = messagebox.askyesno(
+            "Welcome to BreakGuard",
+            "This appears to be your first time running BreakGuard.\n\n"
+            "Would you like to run the setup wizard?\n\n"
+            "(You can also run 'python main.py --setup' later)",
+            icon='question'
+        )
+        
+        root.destroy()
+        
+        if result:
+            setup_wizard()
+            # After setup, start the app
+            config = ConfigManager()  # Reload config
+        else:
+            print("\n⚠ BreakGuard is not configured.")
+            print("Run 'python main.py --setup' to configure.\n")
             return
     
     # Run application

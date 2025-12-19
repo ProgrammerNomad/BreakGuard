@@ -4,18 +4,29 @@ BreakGuard is a Windows 11 health-discipline application that enforces regular b
 
 It is designed for people who work 10–15+ hours continuously on computers and want a non-cheatable, habit-forming system to protect their health.
 
+**Repository:** [https://github.com/ProgrammerNomad/BreakGuard](https://github.com/ProgrammerNomad/BreakGuard)
+
 ## Why BreakGuard?
 
 Most reminders are easy to ignore.
 BreakGuard forces you to take breaks.
 
-- Locks your screen after fixed intervals
-- Turns off monitor via Tinxy API
-- Requires Google Authenticator + Face Verification to unlock
-- Survives reboot / power cut
-- Builds healthy work habits automatically
+- 🎨 **User-friendly GUI** - No command-line needed!
+- ⏱️ Locks your screen after fixed intervals
+- 🖥️ Turns off monitor via Tinxy API
+- 🔐 Requires Google Authenticator + Face Verification to unlock
+- 🔄 Survives reboot / power cut
+- 🧠 Builds healthy work habits automatically
 
 ## Key Features
+
+### Easy Setup Wizard
+
+- Beautiful graphical setup wizard
+- No technical knowledge required
+- QR code displayed in-app for Google Authenticator
+- Guided face registration with camera preview
+- One-click Tinxy API configuration
 
 ### Time-Based Enforcement
 
@@ -52,6 +63,13 @@ BreakGuard forces you to take breaks.
 - Keyboard shortcut blocking (Alt+Tab, Alt+F4, etc.)
 - Task Manager auto-close
 - Limited emergency unlocks (optional)
+
+### User-Friendly Interface
+
+- System tray integration
+- Graphical settings panel
+- Visual timer and status indicators
+- Accessible for non-technical users
 
 ## Designed For
 
@@ -125,7 +143,53 @@ All settings are managed via a simple config file:
 1. Install the Tinxy Mobile application
 2. Login to the application
 3. Click on the setting icon (top left on Android)
-4. Click on API Token
+4. Getting Started
+
+### For Non-Technical Users
+
+We've made BreakGuard super easy to use! No command-line knowledge needed.
+
+1. **Install Python** from [python.org](https://www.python.org/downloads/) (check "Add to PATH")
+2. **Download BreakGuard** from GitHub
+3. **Install dependencies**: Double-click `install.bat` (we'll create this)
+4. **Run BreakGuard**: Double-click `run_breakguard.bat`
+5. **Follow the Setup Wizard** - it's point-and-click easy!
+
+📖 **Detailed guide for beginners**: See [QUICKSTART.md](QUICKSTART.md)
+
+### For Developers
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run setup wizard
+python main.py --setup
+
+# Start BreakGuard
+python main.py
+```
+
+### What You'll See
+
+1. **Setup Wizard** (first run):
+   - Set your work/break schedule
+   - Scan QR code with Google Authenticator app
+   - Register your face (optional)
+   - Configure Tinxy (optional)
+
+2. **System Tray Icon**:
+   - Right-click for controls
+   - See time remaining
+   - Access settings anytime
+
+3. **Lock Screen** (at break time):
+   - Fullscreen break notice
+   - Enter 6-digit code from phone
+   - Verify your face
+   - Unlock and continue!
+
+## Click on API Token
 5. Click on Get Token
 6. Copy and save the token in your config file
 7. Get your device ID from the devices list
