@@ -206,7 +206,7 @@ class GoogleAuthPage(QWizardPage):
         # QR Code
         self.qr_label = QLabel("Click 'Generate QR Code' to start")
         self.qr_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.qr_label.setFixedSize(330, 330)
+        self.qr_label.setFixedSize(250, 250)
         self.qr_label.setStyleSheet("border: 2px solid #cccccc; background-color: white;")
         content_layout.addWidget(self.qr_label)
         
@@ -221,8 +221,10 @@ class GoogleAuthPage(QWizardPage):
             }
         """)
         inst_layout = QVBoxLayout(inst_frame)
+        inst_layout.setSpacing(5)
         
         inst_title = QLabel("✓ QR Code Generated!")
+        inst_title.setMinimumHeight(25)
         inst_title.setStyleSheet("font-weight: bold; color: #00aa00; font-size: 14px;")
         inst_layout.addWidget(inst_title)
         
@@ -280,7 +282,7 @@ class GoogleAuthPage(QWizardPage):
         for i in range(6):
             input_box = QLineEdit()
             input_box.setMaxLength(1)
-            input_box.setFixedSize(50, 50)
+            input_box.setFixedSize(40, 40)
             input_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
             input_box.setStyleSheet("""
                 QLineEdit {
@@ -298,6 +300,8 @@ class GoogleAuthPage(QWizardPage):
             otp_layout.addWidget(input_box)
         
         verify_layout.addLayout(otp_layout)
+        
+        verify_layout.addSpacing(15)
         
         self.verify_btn = QPushButton("Verify Code")
         self.verify_btn.clicked.connect(self._verify_code)
@@ -330,7 +334,7 @@ class GoogleAuthPage(QWizardPage):
         qr_img = self.totp.generate_qr_code(self.secret)
         
         # Convert PIL image to QPixmap
-        qr_img = qr_img.resize((300, 300))
+        qr_img = qr_img.resize((220, 220))
         qr_img_rgb = qr_img.convert('RGB')
         
         import numpy as np
@@ -734,7 +738,7 @@ class SetupWizard(QWizard):
         
         self.setWindowTitle("BreakGuard Setup Wizard")
         self.setWizardStyle(QWizard.WizardStyle.ModernStyle)
-        self.setFixedSize(700, 600)
+        self.setFixedSize(800, 700)
         
         # Add pages
         self.addPage(WelcomePage())
