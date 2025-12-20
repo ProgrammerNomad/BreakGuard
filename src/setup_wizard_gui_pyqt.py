@@ -11,6 +11,7 @@ from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread
 from PyQt6.QtGui import QFont, QPixmap, QImage, QKeyEvent, QKeySequence
 from PyQt6.QtMultimedia import QMediaDevices
 import cv2
+import numpy as np
 
 from config_manager import ConfigManager
 from totp_auth import TOTPAuth
@@ -39,23 +40,44 @@ class CameraThread(QThread):
             except ImportError:
                 pass
 
+            # Small delay to ensure resources are ready
+            self.msleep(100)
+
             # Use CAP_DSHOW for Windows compatibility
+            print(f"Opening camera {self.camera_index}...")
             self.camera = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
             
             if not self.camera.isOpened():
+                print(f"Failed to open camera {self.camera_index}")
                 self.error_occurred.emit(f"Could not open camera {self.camera_index}")
                 return
 
+            # Try to set buffer size to 1 to reduce lag/buffering issues
+            try:
+                self.camera.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+            except:
+                pass
+
+            print(f"Camera {self.camera_index} opened successfully")
             self.running = True
             
             while self.running:
-                ret, frame = self.camera.read()
-                if ret:
-                    self.frame_ready.emit(frame)
+                try:
+                    ret, frame = self.camera.read()
+                    if ret and frame is not None and frame.size > 0:
+                        self.frame_ready.emit(frame)
+                    else:
+                        print("Failed to read frame or empty frame")
+                        self.msleep(100) # Wait a bit before retrying
+                except Exception as e:
+                    print(f"Frame read error: {e}")
+                    
                 self.msleep(33)
         except Exception as e:
+            print(f"Camera thread error: {e}")
             self.error_occurred.emit(str(e))
         finally:
+            print("Releasing camera...")
             if self.camera:
                 self.camera.release()
             
@@ -658,6 +680,11 @@ class FaceVerificationPage(QWizardPage):
                 from pygrabber.dshow_graph import FilterGraph
                 graph = FilterGraph()
                 devices = graph.get_input_devices()
+                # Explicitly release the graph to free COM resources
+                del graph
+                import gc
+                gc.collect()
+                
                 if devices:
                     for i, device_name in enumerate(devices):
                         self.cam_combo.addItem(device_name, i)
@@ -801,42 +828,52 @@ class FaceVerificationPage(QWizardPage):
 
     def _on_camera_frame(self, frame):
         """Update camera preview"""
-        self.current_frame = frame
-        
-        # Detect face for feedback
-        # Note: This runs in UI thread, might need optimization if slow
-        face_loc = self.face_verifier.detect_face(frame)
-        
-        # Create a copy for display to draw the rectangle
-        display_frame = frame.copy()
-        
-        if face_loc:
-            x, y, w, h = face_loc
-            # Draw green rectangle around face
-            cv2.rectangle(display_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        if frame is None or frame.size == 0:
+            return
             
-            if not self.is_capturing:
-                self.status_label.setText("Face detected - Ready to capture")
-                self.status_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #0d7377;")
-        else:
-            if not self.is_capturing:
-                self.status_label.setText("Position your face in the frame")
-                self.status_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #e0e0e0;")
-        
-        # Display frame
-        rgb_frame = cv2.cvtColor(display_frame, cv2.COLOR_BGR2RGB)
-        h, w, ch = rgb_frame.shape
-        bytes_per_line = ch * w
-        qt_image = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
-        pixmap = QPixmap.fromImage(qt_image)
-        
-        # Scale to fit container while keeping aspect ratio
-        scaled = pixmap.scaled(
-            self.preview_container.size(),
-            Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation
-        )
-        self.preview_container.setPixmap(scaled)
+        try:
+            self.current_frame = frame
+            
+            # Detect face for feedback
+            # Note: This runs in UI thread, might need optimization if slow
+            face_loc = self.face_verifier.detect_face(frame)
+            
+            # Create a copy for display to draw the rectangle
+            display_frame = frame.copy()
+            
+            if face_loc:
+                x, y, w, h = face_loc
+                # Draw green rectangle around face
+                cv2.rectangle(display_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                
+                if not self.is_capturing:
+                    self.status_label.setText("Face detected - Ready to capture")
+                    self.status_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #0d7377;")
+            else:
+                if not self.is_capturing:
+                    self.status_label.setText("Position your face in the frame")
+                    self.status_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #e0e0e0;")
+            
+            # Display frame
+            # Ensure frame is contiguous and in correct format
+            if not display_frame.flags['C_CONTIGUOUS']:
+                display_frame = np.ascontiguousarray(display_frame)
+                
+            rgb_frame = cv2.cvtColor(display_frame, cv2.COLOR_BGR2RGB)
+            h, w, ch = rgb_frame.shape
+            bytes_per_line = ch * w
+            qt_image = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format.Format_RGB888)
+            pixmap = QPixmap.fromImage(qt_image)
+            
+            # Scale to fit container while keeping aspect ratio
+            scaled = pixmap.scaled(
+                self.preview_container.size(),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
+            self.preview_container.setPixmap(scaled)
+        except Exception as e:
+            print(f"Error processing frame: {e}")
 
     def _auto_capture(self):
         """Auto-capture face"""
