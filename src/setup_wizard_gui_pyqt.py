@@ -209,68 +209,170 @@ class WorkIntervalsPage(QWizardPage):
     
     def __init__(self):
         super().__init__()
-        self.setTitle("Configure Work Intervals")
-        self.setSubTitle("Set how often you want to take breaks")
+        # Clear default header for custom design
+        self.setTitle("")
+        self.setSubTitle("")
         
         layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         layout.setSpacing(20)
+        layout.setContentsMargins(40, 20, 40, 20)
         
-        # Work interval
-        work_layout = QHBoxLayout()
-        work_label = QLabel("Work interval (minutes):")
-        work_label.setMinimumWidth(200)
+        # Header
+        header_layout = QVBoxLayout()
+        header_layout.setSpacing(5)
+        header_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        title = QLabel("Configure Work Intervals")
+        title.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        title.setStyleSheet("color: #2c3e50;")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header_layout.addWidget(title)
+        
+        subtitle = QLabel("Set how often you want to take breaks")
+        subtitle.setFont(QFont("Segoe UI", 11))
+        subtitle.setStyleSheet("color: #7f8c8d;")
+        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header_layout.addWidget(subtitle)
+        
+        layout.addLayout(header_layout)
+        
+        # Settings Card
+        settings_card = QFrame()
+        settings_card.setStyleSheet("""
+            QFrame {
+                background-color: #ffffff;
+                border-radius: 10px;
+                border: 1px solid #e0e0e0;
+            }
+            QLabel {
+                border: none;
+            }
+        """)
+        card_layout = QVBoxLayout(settings_card)
+        card_layout.setSpacing(20)
+        card_layout.setContentsMargins(25, 25, 25, 25)
+        
+        # Work Interval Section
+        work_section = QVBoxLayout()
+        work_section.setSpacing(5)
+        
+        work_label = QLabel("Work interval")
+        work_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        work_label.setStyleSheet("color: #34495e;")
+        work_section.addWidget(work_label)
+        
         self.work_spin = QSpinBox()
         self.work_spin.setRange(15, 240)
         self.work_spin.setValue(60)
         self.work_spin.setSuffix(" minutes")
-        self.work_spin.setToolTip("How long to work before taking a break (15-240 minutes)")
-        self.work_spin.setAccessibleName("Work interval in minutes")
-        self.work_spin.setAccessibleDescription("Set the duration of work sessions before a break is triggered")
-        work_layout.addWidget(work_label)
-        work_layout.addWidget(self.work_spin)
-        work_layout.addStretch()
-        layout.addLayout(work_layout)
+        self.work_spin.setFixedHeight(35)
+        self.work_spin.setFont(QFont("Segoe UI", 11))
+        # Styling for spinbox
+        self.work_spin.setStyleSheet("""
+            QSpinBox {
+                border: 1px solid #bdc3c7;
+                border-radius: 5px;
+                padding: 5px;
+                background-color: #f8f9fa;
+            }
+            QSpinBox:focus {
+                border: 1px solid #3498db;
+                background-color: #ffffff;
+            }
+        """)
+        work_section.addWidget(self.work_spin)
         
-        # Warning time
-        warning_layout = QHBoxLayout()
-        warning_label = QLabel("Warning before lock:")
-        warning_label.setMinimumWidth(200)
+        work_helper = QLabel("After this time, BreakGuard will lock your screen.")
+        work_helper.setFont(QFont("Segoe UI", 9))
+        work_helper.setStyleSheet("color: #95a5a6;")
+        work_section.addWidget(work_helper)
+        
+        card_layout.addLayout(work_section)
+        
+        # Divider
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
+        line.setStyleSheet("background-color: #ecf0f1; border: none; max-height: 1px;")
+        card_layout.addWidget(line)
+        
+        # Warning Section
+        warning_section = QVBoxLayout()
+        warning_section.setSpacing(5)
+        
+        warning_label = QLabel("Warning before lock")
+        warning_label.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        warning_label.setStyleSheet("color: #34495e;")
+        warning_section.addWidget(warning_label)
+        
         self.warning_spin = QSpinBox()
         self.warning_spin.setRange(1, 30)
         self.warning_spin.setValue(5)
         self.warning_spin.setSuffix(" minutes")
-        self.warning_spin.setToolTip("How many minutes warning before screen locks (1-30 minutes)")
-        self.warning_spin.setAccessibleName("Warning time in minutes")
-        self.warning_spin.setAccessibleDescription("Set how many minutes of warning you get before the screen locks")
-        warning_layout.addWidget(warning_label)
-        warning_layout.addWidget(self.warning_spin)
-        warning_layout.addStretch()
-        layout.addLayout(warning_layout)
+        self.warning_spin.setFixedHeight(35)
+        self.warning_spin.setFont(QFont("Segoe UI", 11))
+        self.warning_spin.setStyleSheet(self.work_spin.styleSheet())
+        warning_section.addWidget(self.warning_spin)
         
+        warning_helper = QLabel("You'll receive a reminder before the lock activates.")
+        warning_helper.setFont(QFont("Segoe UI", 9))
+        warning_helper.setStyleSheet("color: #95a5a6;")
+        warning_section.addWidget(warning_helper)
         
-        layout.addSpacing(20)
+        card_layout.addLayout(warning_section)
         
-        # Recommendations
-        rec_frame = QFrame()
-        rec_frame.setProperty("class", "card")
-        rec_layout = QVBoxLayout(rec_frame)
+        layout.addWidget(settings_card)
         
-        rec_title = QLabel("💡 Recommended Settings")
-        rec_title.setProperty("class", "h2")
-        rec_layout.addWidget(rec_title)
+        # Recommendations Card
+        rec_card = QFrame()
+        rec_card.setStyleSheet("""
+            QFrame {
+                background-color: #f8f9fa;
+                border-radius: 10px;
+                border: 1px solid #e0e0e0;
+            }
+        """)
+        rec_layout = QVBoxLayout(rec_card)
+        rec_layout.setSpacing(10)
+        rec_layout.setContentsMargins(20, 15, 20, 15)
         
-        recommendations = [
-            "• 60 minutes: Standard (20-20-20 rule)",
-            "• 90 minutes: Extended focus sessions",
-            "• 30 minutes: Frequent breaks for eye health"
+        rec_header = QLabel("💡 Recommended Settings")
+        rec_header.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        rec_header.setStyleSheet("color: #2c3e50; border: none;")
+        rec_layout.addWidget(rec_header)
+        
+        # Preset Buttons
+        presets = [
+            ("60 minutes — Balanced work & eye care", 60),
+            ("90 minutes — Extended focus sessions", 90),
+            ("30 minutes — Frequent breaks for eye health", 30)
         ]
         
-        for rec in recommendations:
-            label = QLabel(rec)
-            label.setProperty("class", "text-secondary")
-            rec_layout.addWidget(label)
-        
-        layout.addWidget(rec_frame)
+        for text, val in presets:
+            btn = QPushButton(text)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.setStyleSheet("""
+                QPushButton {
+                    text-align: left;
+                    border: none;
+                    background: transparent;
+                    color: #34495e;
+                    padding: 5px;
+                    font-family: "Segoe UI";
+                    font-size: 13px;
+                }
+                QPushButton:hover {
+                    color: #2980b9;
+                    background-color: #ecf0f1;
+                    border-radius: 4px;
+                }
+            """)
+            # Use lambda with default arg to capture value correctly
+            btn.clicked.connect(lambda checked, v=val: self.apply_preset(v))
+            rec_layout.addWidget(btn)
+            
+        layout.addWidget(rec_card)
         layout.addStretch()
         
         self.setLayout(layout)
@@ -278,6 +380,23 @@ class WorkIntervalsPage(QWizardPage):
         # Register fields
         self.registerField("work_interval", self.work_spin)
         self.registerField("warning_time", self.warning_spin)
+        
+        # Connect validation
+        self.work_spin.valueChanged.connect(self.validate_inputs)
+        self.warning_spin.valueChanged.connect(self.validate_inputs)
+
+    def apply_preset(self, minutes):
+        self.work_spin.setValue(minutes)
+        # Adjust warning time intelligently if needed
+        if minutes <= 30:
+            self.warning_spin.setValue(3)
+        else:
+            self.warning_spin.setValue(5)
+            
+    def validate_inputs(self):
+        # Ensure warning time is less than work interval
+        if self.warning_spin.value() >= self.work_spin.value():
+            self.warning_spin.setValue(max(1, self.work_spin.value() - 1))
 
     def initializePage(self):
         """Initialize page - set tab order"""
@@ -941,88 +1060,213 @@ class TinxyPage(QWizardPage):
     
     def __init__(self):
         super().__init__()
-        self.setTitle("Tinxy Device Integration")
-        self.setSubTitle("Control IoT devices during breaks (Optional)")
+        # Clear default header
+        self.setTitle("")
+        self.setSubTitle("")
         
         layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         layout.setSpacing(20)
+        layout.setContentsMargins(40, 20, 40, 20)
         
-        # Enable checkbox
-        self.enable_check = QCheckBox("Enable Tinxy Integration")
-        self.enable_check.setChecked(False)
+        # Header
+        header_layout = QVBoxLayout()
+        header_layout.setSpacing(5)
+        header_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        title = QLabel("Tinxy Device Integration")
+        title.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
+        title.setStyleSheet("color: #2c3e50;")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header_layout.addWidget(title)
+        
+        subtitle = QLabel("Control IoT devices during breaks (optional)")
+        subtitle.setFont(QFont("Segoe UI", 11))
+        subtitle.setStyleSheet("color: #7f8c8d;")
+        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header_layout.addWidget(subtitle)
+        
+        layout.addLayout(header_layout)
+        
+        # Enable Toggle
+        toggle_layout = QHBoxLayout()
+        self.enable_check = QCheckBox("Enable Tinxy integration")
+        self.enable_check.setFont(QFont("Segoe UI", 11))
+        self.enable_check.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.enable_check.setStyleSheet("""
+            QCheckBox {
+                color: #34495e;
+                spacing: 10px;
+            }
+            QCheckBox::indicator {
+                width: 40px;
+                height: 20px;
+                border-radius: 10px;
+                background-color: #bdc3c7;
+            }
+            QCheckBox::indicator:checked {
+                background-color: #0d7377;
+            }
+            QCheckBox::indicator:checked:hover {
+                background-color: #14a19f;
+            }
+        """)
         self.enable_check.stateChanged.connect(self._on_toggle_enabled)
-        layout.addWidget(self.enable_check)
+        toggle_layout.addWidget(self.enable_check)
+        toggle_layout.addStretch()
+        layout.addLayout(toggle_layout)
         
-        # Config frame
-        config_frame = QFrame()
-        config_frame.setProperty("class", "card")
-        config_layout = QVBoxLayout(config_frame)
+        # Configuration Card
+        self.config_card = QFrame()
+        self.config_card.setStyleSheet("""
+            QFrame {
+                background-color: #ffffff;
+                border-radius: 10px;
+                border: 1px solid #e0e0e0;
+            }
+            QLabel {
+                border: none;
+                color: #34495e;
+            }
+            QLineEdit, QSpinBox {
+                border: 1px solid #bdc3c7;
+                border-radius: 5px;
+                padding: 8px;
+                background-color: #f8f9fa;
+                font-family: "Segoe UI";
+                font-size: 13px;
+            }
+            QLineEdit:focus, QSpinBox:focus {
+                border: 1px solid #3498db;
+                background-color: #ffffff;
+            }
+            QLineEdit:disabled, QSpinBox:disabled {
+                background-color: #f0f0f0;
+                color: #95a5a6;
+            }
+        """)
+        card_layout = QVBoxLayout(self.config_card)
+        card_layout.setSpacing(15)
+        card_layout.setContentsMargins(25, 25, 25, 25)
         
-        config_title = QLabel("API Configuration")
-        config_title.setProperty("class", "h2")
-        config_layout.addWidget(config_title)
+        card_title = QLabel("Connect your Tinxy device")
+        card_title.setFont(QFont("Segoe UI", 11, QFont.Weight.Bold))
+        card_layout.addWidget(card_title)
         
         # API Key
-        api_layout = QHBoxLayout()
-        api_label = QLabel("API Key:")
-        api_label.setMinimumWidth(120)
+        api_layout = QVBoxLayout()
+        api_layout.setSpacing(5)
+        api_label = QLabel("API Key")
+        api_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
         self.api_input = QLineEdit()
-        self.api_input.setPlaceholderText("Enter Tinxy API key")
+        self.api_input.setPlaceholderText("Paste your Tinxy API key")
+        self.api_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.api_input.textChanged.connect(self._check_fields)
         api_layout.addWidget(api_label)
         api_layout.addWidget(self.api_input)
-        config_layout.addLayout(api_layout)
+        card_layout.addLayout(api_layout)
         
-        # Device ID
-        device_layout = QHBoxLayout()
-        device_label = QLabel("Device ID:")
-        device_label.setMinimumWidth(120)
+        # Device ID & Number Row (Grid for perfect alignment)
+        grid_layout = QGridLayout()
+        grid_layout.setHorizontalSpacing(15)
+        grid_layout.setVerticalSpacing(5)
+        
+        # Labels
+        dev_label = QLabel("Device ID")
+        dev_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        grid_layout.addWidget(dev_label, 0, 0)
+        
+        num_label = QLabel("Device #")
+        num_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        grid_layout.addWidget(num_label, 0, 1)
+        
+        # Inputs
         self.device_input = QLineEdit()
-        self.device_input.setPlaceholderText("Enter device ID")
-        device_layout.addWidget(device_label)
-        device_layout.addWidget(self.device_input)
-        config_layout.addLayout(device_layout)
+        self.device_input.setPlaceholderText("e.g. device_123456")
+        self.device_input.setFixedHeight(38) # Fixed height for consistency
+        self.device_input.textChanged.connect(self._check_fields)
+        grid_layout.addWidget(self.device_input, 1, 0)
         
-        # Device Number
-        num_layout = QHBoxLayout()
-        num_label = QLabel("Device Number:")
-        num_label.setMinimumWidth(120)
         self.device_num_spin = QSpinBox()
         self.device_num_spin.setRange(1, 4)
         self.device_num_spin.setValue(1)
-        num_layout.addWidget(num_label)
-        num_layout.addWidget(self.device_num_spin)
-        num_layout.addStretch()
-        config_layout.addLayout(num_layout)
+        self.device_num_spin.setFixedHeight(38) # Fixed height for consistency
+        grid_layout.addWidget(self.device_num_spin, 1, 1)
         
-        # Test button
-        self.test_btn = QPushButton("Test Connection")
-        self.test_btn.setMinimumWidth(150)
+        # Column stretch
+        grid_layout.setColumnStretch(0, 2)
+        grid_layout.setColumnStretch(1, 1)
+        
+        card_layout.addLayout(grid_layout)
+        
+        helper = QLabel("Used when your device has multiple switches")
+        helper.setFont(QFont("Segoe UI", 9))
+        helper.setStyleSheet("color: #95a5a6;")
+        card_layout.addWidget(helper)
+        
+        card_layout.addSpacing(10)
+        
+        # Test Connection Row
+        test_layout = QHBoxLayout()
+        
+        self.test_btn = QPushButton("Test connection")
+        self.test_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.test_btn.setFixedWidth(140)
         self.test_btn.clicked.connect(self._test_connection)
-        config_layout.addWidget(self.test_btn)
+        self.test_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #0d7377;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 8px 15px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #14a19f;
+            }
+            QPushButton:disabled {
+                background-color: #bdc3c7;
+            }
+        """)
+        test_layout.addWidget(self.test_btn)
         
-        # Status
-        self.status_label = QLabel("Status: Not connected")
-        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        config_layout.addWidget(self.status_label)
+        self.status_label = QLabel("Not connected")
+        self.status_label.setFont(QFont("Segoe UI", 10))
+        self.status_label.setStyleSheet("color: #95a5a6; margin-left: 10px;")
+        test_layout.addWidget(self.status_label)
+        test_layout.addStretch()
         
-        layout.addWidget(config_frame)
+        card_layout.addLayout(test_layout)
         
-        # Info
-        info_frame = QFrame()
-        info_frame.setProperty("class", "card")
-        info_layout = QVBoxLayout(info_frame)
+        layout.addWidget(self.config_card)
         
-        info_title = QLabel("ℹ️ What is Tinxy?")
-        info_title.setProperty("class", "h2")
+        # Info Card
+        info_card = QFrame()
+        info_card.setStyleSheet("""
+            QFrame {
+                background-color: #f8f9fa;
+                border-radius: 10px;
+                border: 1px solid #e0e0e0;
+            }
+        """)
+        info_layout = QVBoxLayout(info_card)
+        info_layout.setContentsMargins(20, 15, 20, 15)
+        
+        info_title = QLabel("What is Tinxy?")
+        info_title.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        info_title.setStyleSheet("color: #2c3e50; border: none;")
         info_layout.addWidget(info_title)
         
-        info_text = QLabel("Control smart switches/devices during breaks.\nCan turn off monitor automatically.")
-        info_text.setProperty("class", "text-secondary")
+        info_text = QLabel("Tinxy allows BreakGuard to control smart switches during breaks — for example, turning off your monitor automatically.")
+        info_text.setWordWrap(True)
+        info_text.setFont(QFont("Segoe UI", 10))
+        info_text.setStyleSheet("color: #7f8c8d; border: none;")
         info_layout.addWidget(info_text)
         
-        layout.addWidget(info_frame)
-        
+        layout.addWidget(info_card)
         layout.addStretch()
+        
         self.setLayout(layout)
         
         self.registerField("tinxy_enabled", self.enable_check)
@@ -1030,39 +1274,51 @@ class TinxyPage(QWizardPage):
         self.registerField("tinxy_device_id", self.device_input)
         self.registerField("tinxy_device_number", self.device_num_spin)
         
+        # Initialize state
         self._on_toggle_enabled(False)
+        self._check_fields()
     
     def _on_toggle_enabled(self, state):
         """Handle enable checkbox toggle"""
         enabled = bool(state)
-        self.api_input.setEnabled(enabled)
-        self.device_input.setEnabled(enabled)
-        self.device_num_spin.setEnabled(enabled)
-        self.test_btn.setEnabled(enabled)
+        self.config_card.setEnabled(enabled)
+        
+        # Visual feedback for disabled state
+        if enabled:
+            self.config_card.setStyleSheet(self.config_card.styleSheet().replace("opacity: 0.6;", ""))
+        else:
+            # Add opacity to look disabled
+            self.config_card.setStyleSheet(self.config_card.styleSheet() + "QFrame { opacity: 0.6; }")
+            
+        self._check_fields()
+    
+    def _check_fields(self):
+        """Enable test button only if fields are filled and enabled"""
+        if not self.enable_check.isChecked():
+            self.test_btn.setEnabled(False)
+            return
+            
+        has_api = bool(self.api_input.text().strip())
+        has_device = bool(self.device_input.text().strip())
+        self.test_btn.setEnabled(has_api and has_device)
     
     def _test_connection(self):
         """Test Tinxy connection"""
         api_key = self.api_input.text().strip()
         device_id = self.device_input.text().strip()
         
-        if not api_key or not device_id:
-            self.status_label.setText("Status: ❌ Please enter API key and device ID")
-            self.status_label.setStyleSheet("color: red;")
-            return
-        
-        # Show loading indicator
-        self.status_label.setText("Status: Testing connection...")
-        self.status_label.setStyleSheet("color: orange;")
+        self.status_label.setText("Connecting...")
+        self.status_label.setStyleSheet("color: #f39c12; margin-left: 10px;")
         self.test_btn.setEnabled(False)
         QApplication.processEvents()
         
         tinxy = TinxyAPI(api_key, device_id)
         if tinxy.test_connection():
-            self.status_label.setText("Status: ✅ Connected successfully!")
-            self.status_label.setStyleSheet("color: green; font-weight: bold;")
+            self.status_label.setText("✅ Connected successfully")
+            self.status_label.setStyleSheet("color: #27ae60; font-weight: bold; margin-left: 10px;")
         else:
-            self.status_label.setText("Status: ❌ Connection failed")
-            self.status_label.setStyleSheet("color: red;")
+            self.status_label.setText("❌ Connection failed")
+            self.status_label.setStyleSheet("color: #c0392b; margin-left: 10px;")
         
         self.test_btn.setEnabled(True)
 
