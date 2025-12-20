@@ -136,8 +136,21 @@ class LockScreen(QWidget):
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setSpacing(30)
         
+        # Logo
+        logo_label = QLabel()
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        from pathlib import Path
+        assets_dir = Path(__file__).parent.parent / 'assets'
+        logo_path = assets_dir / 'logo.png'
+        
+        if logo_path.exists():
+            pixmap = QPixmap(str(logo_path))
+            scaled_pixmap = pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_label.setPixmap(scaled_pixmap)
+            layout.addWidget(logo_label)
+        
         # Title
-        title = QLabel("⏸ BREAK TIME")
+        title = QLabel("BREAK TIME")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title_font = QFont("Segoe UI", 48, QFont.Weight.Bold)
         title.setFont(title_font)

@@ -54,11 +54,23 @@ class WelcomePage(QWizardPage):
         layout.setSpacing(20)
         
         # Icon/Logo
-        title = QLabel("🛡️")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title_font = QFont("Segoe UI", 72)
-        title.setFont(title_font)
-        layout.addWidget(title)
+        logo_label = QLabel()
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        from pathlib import Path
+        assets_dir = Path(__file__).parent.parent / 'assets'
+        logo_path = assets_dir / 'logo.png'
+        
+        if logo_path.exists():
+            pixmap = QPixmap(str(logo_path))
+            scaled_pixmap = pixmap.scaled(128, 128, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_label.setPixmap(scaled_pixmap)
+        else:
+            logo_label.setText("🛡️")
+            title_font = QFont("Segoe UI", 72)
+            logo_label.setFont(title_font)
+            
+        layout.addWidget(logo_label)
         
         # Welcome message
         welcome = QLabel("Welcome to BreakGuard")
@@ -199,6 +211,7 @@ class GoogleAuthPage(QWizardPage):
         
         # Generate button
         self.generate_btn = QPushButton("Generate QR Code")
+        self.generate_btn.setMinimumWidth(150)
         self.generate_btn.clicked.connect(self._generate_qr)
         layout.addWidget(self.generate_btn)
         
@@ -284,7 +297,7 @@ class GoogleAuthPage(QWizardPage):
         """)
         verify_layout = QVBoxLayout(verify_frame)
         
-        verify_title = QLabel("🔓 Verify Your Setup")
+        verify_title = QLabel("Verify Your Setup")
         verify_title.setStyleSheet("font-weight: bold;")
         verify_layout.addWidget(verify_title)
         
@@ -319,6 +332,7 @@ class GoogleAuthPage(QWizardPage):
         verify_layout.addSpacing(15)
         
         self.verify_btn = QPushButton("Verify Code")
+        self.verify_btn.setMinimumWidth(150)
         self.verify_btn.clicked.connect(self._verify_code)
         verify_layout.addWidget(self.verify_btn)
         
@@ -457,6 +471,7 @@ class FaceVerificationPage(QWizardPage):
         
         # Capture button
         self.capture_btn = QPushButton("Start Capture")
+        self.capture_btn.setMinimumWidth(150)
         self.capture_btn.clicked.connect(self._start_capture)
         layout.addWidget(self.capture_btn)
         
@@ -613,6 +628,7 @@ class TinxyPage(QWizardPage):
         
         # Test button
         self.test_btn = QPushButton("Test Connection")
+        self.test_btn.setMinimumWidth(150)
         self.test_btn.clicked.connect(self._test_connection)
         config_layout.addWidget(self.test_btn)
         

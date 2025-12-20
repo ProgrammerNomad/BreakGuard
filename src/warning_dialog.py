@@ -107,6 +107,7 @@ class WarningDialog(QDialog):
         btn_layout = QHBoxLayout()
         
         self.snooze_btn = QPushButton("Snooze 5 min")
+        self.snooze_btn.setMinimumWidth(100)
         self.snooze_btn.clicked.connect(self._on_snooze)
         if not can_snooze:
             self.snooze_btn.setEnabled(False)
@@ -115,6 +116,7 @@ class WarningDialog(QDialog):
         btn_layout.addWidget(self.snooze_btn)
         
         ok_btn = QPushButton("OK")
+        ok_btn.setMinimumWidth(100)
         ok_btn.clicked.connect(self.accept)
         ok_btn.setStyleSheet("background-color: #28a745; color: white;")
         btn_layout.addWidget(ok_btn)

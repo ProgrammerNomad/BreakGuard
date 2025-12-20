@@ -59,14 +59,17 @@ class SettingsWindow(QWidget):
         button_layout.addStretch()
         
         reset_btn = QPushButton("Reset to Defaults")
+        reset_btn.setMinimumWidth(130)
         reset_btn.clicked.connect(self._reset_defaults)
         button_layout.addWidget(reset_btn)
         
         cancel_btn = QPushButton("Cancel")
+        cancel_btn.setMinimumWidth(130)
         cancel_btn.clicked.connect(self.close)
         button_layout.addWidget(cancel_btn)
         
         save_btn = QPushButton("Save Settings")
+        save_btn.setMinimumWidth(130)
         save_btn.clicked.connect(self._save_settings)
         save_btn.setStyleSheet("""
             QPushButton {
@@ -248,6 +251,7 @@ class SettingsWindow(QWidget):
         
         # Test button
         test_btn = QPushButton("Test Connection")
+        test_btn.setMinimumWidth(150)
         test_btn.clicked.connect(self._test_tinxy)
         tinxy_layout.addWidget(test_btn)
         

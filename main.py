@@ -34,9 +34,35 @@ def main():
     except AttributeError:
         pass  # Not available in all PyQt6 versions
     
+    # Set App User Model ID for Windows notifications
+    if sys.platform == 'win32':
+        import ctypes
+        myappid = 'BreakGuard' # Changed to simple name
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        
+        # Ensure Start Menu shortcut exists for notifications to have icon
+        try:
+            from windows_startup import WindowsStartup
+            startup = WindowsStartup()
+            startup.create_shortcut()
+        except Exception:
+            pass
+
     app = QApplication(sys.argv)
     app.setApplicationName("BreakGuard")
     app.setOrganizationName("BreakGuard")
+    
+    # Set application icon
+    from PyQt6.QtGui import QIcon
+    assets_dir = Path(__file__).parent / 'assets'
+    icon_path = assets_dir / 'logo.png'
+    if icon_path.exists():
+        app.setWindowIcon(QIcon(str(icon_path)))
+    else:
+        # Fallback
+        app.setWindowIcon(app.style().standardIcon(
+            app.style().StandardPixmap.SP_ComputerIcon
+        ))
     
     # Check if first time setup is needed
     config_path = Path(__file__).parent / 'config.json'

@@ -61,11 +61,16 @@ class BreakGuardApp(QObject):
         """Create system tray icon and menu"""
         self.tray_icon = QSystemTrayIcon()
         
-        # Try to load icon or create a simple text-based one
-        # For now, use default icon
-        self.tray_icon.setIcon(QApplication.style().standardIcon(
-            QApplication.style().StandardPixmap.SP_ComputerIcon
-        ))
+        # Load icon
+        assets_dir = Path(__file__).parent.parent / 'assets'
+        icon_path = assets_dir / 'logo.png'
+        
+        if icon_path.exists():
+            self.tray_icon.setIcon(QIcon(str(icon_path)))
+        else:
+            self.tray_icon.setIcon(QApplication.style().standardIcon(
+                QApplication.style().StandardPixmap.SP_ComputerIcon
+            ))
         
         # Create menu
         menu = QMenu()
