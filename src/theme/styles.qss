@@ -1,0 +1,252 @@
+/* Global Styles */
+QWidget {
+    font-family: @FONT_FAMILY;
+    font-size: 14px;
+    color: @TEXT;
+    background-color: @BACKGROUND;
+}
+
+/* Buttons */
+QPushButton {
+    background-color: @PRIMARY;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;  /* Reduced padding */
+    font-weight: bold;
+    min-height: 32px;  /* Standard desktop height */
+}
+
+QPushButton:hover {
+    background-color: @PRIMARY_HOVER;
+}
+
+QPushButton:focus {
+    outline: 2px solid @PRIMARY;
+    outline-offset: 2px;
+}
+
+QPushButton:pressed {
+    background-color: @PRIMARY;
+    padding: 7px 12px 5px 12px;  /* Slight shift down effect */
+}
+
+QPushButton:disabled {
+    background-color: #e0e0e0;
+    color: #767676;  /* WCAG AA compliant on #e0e0e0 background */
+}
+
+/* Secondary Button */
+QPushButton.secondary {
+    background-color: transparent;
+    color: @PRIMARY;
+    border: 1px solid @PRIMARY;
+}
+
+QPushButton.secondary:hover {
+    background-color: rgba(13, 115, 119, 0.1);
+}
+
+QPushButton.secondary:focus {
+    outline: 2px solid @PRIMARY;
+    outline-offset: 2px;
+}
+
+/* Danger Button */
+QPushButton.danger {
+    background-color: @ERROR;
+}
+
+QPushButton.danger:hover {
+    background-color: #c82333;
+}
+
+/* Input Fields */
+QLineEdit, QSpinBox, QComboBox {
+    border: 1px solid @BORDER;
+    border-radius: 4px;
+    padding: 4px;  /* Reduced padding */
+    background-color: @SURFACE;
+    selection-background-color: @PRIMARY;
+    min-height: 32px;  /* Standard desktop height */
+}
+
+QLineEdit:focus, QSpinBox:focus, QComboBox:focus {
+    border: 2px solid @PRIMARY;
+    outline: none;
+}
+
+/* Checkbox */
+QCheckBox {
+    min-height: 24px;  /* Standard desktop height */
+    spacing: 8px;
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+QCheckBox:focus {
+    outline: 2px solid @PRIMARY;
+    outline-offset: 2px;
+}
+
+/* Labels */
+QLabel {
+    color: @TEXT;
+    background-color: transparent;
+}
+
+QLabel.h1 {
+    font-size: 24px;
+    font-weight: bold;
+    color: @PRIMARY;
+}
+
+QLabel.h2 {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+QLabel.subtitle {
+    color: @TEXT_SECONDARY;
+    font-size: 12px;
+}
+
+/* Cards / Frames */
+QFrame.card {
+    background-color: @SURFACE;
+    border: 1px solid @BORDER;
+    border-radius: 8px;
+}
+
+/* Progress Bar */
+QProgressBar {
+    border: 1px solid @BORDER;
+    border-radius: 4px;
+    text-align: center;
+    background-color: @SURFACE;
+}
+
+QProgressBar::chunk {
+    background-color: @PRIMARY;
+    border-radius: 3px;
+}
+
+/* Scrollbars */
+QScrollBar:vertical {
+    border: none;
+    background: @BACKGROUND;
+    width: 10px;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: #767676;  /* Darker for better visibility */
+    min-height: 20px;
+    border-radius: 5px;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+/* Tab Widget */
+QTabWidget::pane {
+    border: 1px solid @BORDER;
+    background: @SURFACE;
+}
+
+QTabBar::tab {
+    background: @BACKGROUND;
+    border: 1px solid @BORDER;
+    padding: 8px 16px;
+    margin-right: 2px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+QTabBar::tab:focus {
+    outline: 2px solid @PRIMARY;
+    outline-offset: -2px;
+}
+
+QTabBar::tab:selected {
+    background: @SURFACE;
+    border-bottom-color: @SURFACE;
+    color: @PRIMARY;
+    font-weight: bold;
+}
+
+/* Lock Screen Specifics */
+QWidget#LockScreen {
+    background-color: #1e1e1e;
+    color: white;
+}
+
+QWidget#LockScreen QLabel {
+    color: white;
+}
+
+/* Warning Dialog Specifics */
+QDialog#WarningDialog {
+    background-color: #fff3cd;
+    border: 2px solid #ffeeba;
+}
+
+/* Feature List Item */
+QLabel.feature-item {
+    font-size: 13px;
+    margin-left: 20px;
+}
+
+/* Text Utilities */
+QLabel.text-secondary {
+    color: @TEXT_SECONDARY;
+    font-size: 12px;
+}
+
+QLabel.text-small {
+    font-size: 12px;
+}
+
+QLabel.success-text {
+    font-weight: bold;
+    color: @SUCCESS;
+    font-size: 14px;
+}
+
+QLabel.monospace {
+    font-family: "Consolas", monospace;
+    font-size: 11px;
+    color: @TEXT_SECONDARY;
+}
+
+/* QR Code Box */
+.qr-box {
+    border: 2px solid @BORDER;
+    background-color: white;
+    border-radius: 8px;
+}
+
+/* OTP Input */
+QLineEdit.otp-input {
+    border: 2px solid @BORDER;
+    border-radius: 5px;
+    font-size: 20px;
+    outline: 2px solid @PRIMARY;
+    outline-offset: 1px;
+    font-weight: bold;
+}
+
+QLineEdit.otp-input:focus {
+    border-color: @PRIMARY;
+}
+
+/* Active TOTP digit indicator */
+QLineEdit.otp-input[active="true"] {
+    border: 3px solid @PRIMARY;
+    background-color: #e6f7f7;
+    box-shadow: 0 0 10px rgba(13, 115, 119, 0.3);
+}

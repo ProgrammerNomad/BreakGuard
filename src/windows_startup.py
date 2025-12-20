@@ -2,6 +2,7 @@
 Windows Startup Integration
 Adds BreakGuard to Windows startup registry
 """
+from __future__ import annotations
 
 import os
 import sys

@@ -2,18 +2,22 @@
 Face Verification Module
 Handles face registration and verification using OpenCV
 """
+from __future__ import annotations
 
 import cv2
 import numpy as np
 import json
+import base64
+import logging
 from pathlib import Path
 from typing import List, Optional, Tuple
-import pickle
+
+logger = logging.getLogger(__name__)
 
 class FaceVerification:
     """Face recognition and verification handler"""
     
-    def __init__(self, data_dir: str = None):
+    def __init__(self, data_dir: str | Path = None):
         """Initialize face verification
         
         Args:
@@ -23,19 +27,19 @@ class FaceVerification:
             base_dir = Path(__file__).parent.parent
             data_dir = base_dir / 'data'
         
-        self.data_dir = Path(data_dir)
+        self.data_dir: Path = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         
-        self.encodings_file = self.data_dir / 'face_encodings.pkl'
+        self.encodings_file = self.data_dir / 'face_encodings.json'
         self.face_cascade = None
-        self.registered_faces = []
+        self.registered_faces: List[dict] = []
         
         # Try to load Haar Cascade for face detection
         try:
             cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
             self.face_cascade = cv2.CascadeClassifier(cascade_path)
-        except Exception as e:
-            print(f"Warning: Could not load face cascade: {e}")
+        except (AttributeError, cv2.error) as e:
+            logger.warning(f"Could not load face cascade: {e}")
     
     def detect_face(self, frame: np.ndarray) -> Optional[Tuple[int, int, int, int]]:
         """Detect face in frame using Haar Cascade
@@ -125,11 +129,30 @@ class FaceVerification:
             return False
         
         try:
-            with open(self.encodings_file, 'wb') as f:
-                pickle.dump(self.registered_faces, f)
+            # Convert numpy arrays to base64 strings
+            faces_data = []
+            for face_features in self.registered_faces:
+                # Convert float32 array to bytes
+                face_bytes = face_features.tobytes()
+                # Encode to base64 string
+                face_b64 = base64.b64encode(face_bytes).decode('utf-8')
+                faces_data.append({
+                    'encoding': face_b64,
+                    'shape': face_features.shape,
+                    'dtype': str(face_features.dtype)
+                })
+            
+            # Save to JSON
+            with open(self.encodings_file, 'w') as f:
+                json.dump({
+                    'version': 1,
+                    'faces': faces_data
+                }, f, indent=2)
+            
+            logger.info(f"Saved {len(self.registered_faces)} face encodings")
             return True
-        except Exception as e:
-            print(f"Error saving faces: {e}")
+        except (IOError, OSError) as e:
+            logger.error(f"Error saving faces: {e}", exc_info=True)
             return False
     
     def load_registered_faces(self) -> bool:
@@ -139,14 +162,38 @@ class FaceVerification:
             True if successful, False otherwise
         """
         if not self.encodings_file.exists():
+            # Try to migrate old pickle file
+            old_pickle_file = self.data_dir / 'face_encodings.pkl'
+            if old_pickle_file.exists():
+                return self._migrate_from_pickle(old_pickle_file)
             return False
         
         try:
-            with open(self.encodings_file, 'rb') as f:
-                self.registered_faces = pickle.load(f)
+            with open(self.encodings_file, 'r') as f:
+                data = json.load(f)
+            
+            # Validate version
+            if data.get('version') != 1:
+                logger.warning(f"Unknown face encodings version: {data.get('version')}")
+                return False
+            
+            # Decode base64 strings back to numpy arrays
+            self.registered_faces = []
+            for face_data in data.get('faces', []):
+                face_b64 = face_data['encoding']
+                shape = tuple(face_data['shape'])
+                dtype = face_data['dtype']
+                
+                # Decode from base64
+                face_bytes = base64.b64decode(face_b64)
+                # Reconstruct numpy array
+                face_array = np.frombuffer(face_bytes, dtype=dtype).reshape(shape)
+                self.registered_faces.append(face_array)
+            
+            logger.info(f"Loaded {len(self.registered_faces)} face encodings")
             return True
-        except Exception as e:
-            print(f"Error loading faces: {e}")
+        except (IOError, OSError, json.JSONDecodeError, KeyError, ValueError) as e:
+            logger.error(f"Error loading faces: {e}", exc_info=True)
             return False
     
     def verify_face(self, frame: np.ndarray, threshold: float = 0.6) -> bool:
@@ -209,6 +256,37 @@ class FaceVerification:
                 return False
         
         return True
+    
+    def _migrate_from_pickle(self, old_file: Path) -> bool:
+        """Migrate old pickle file to JSON format
+        
+        Args:
+            old_file: Path to old pickle file
+            
+        Returns:
+            True if migration successful, False otherwise
+        """
+        try:
+            import pickle
+            
+            # Load old pickle file
+            with open(old_file, 'rb') as f:
+                self.registered_faces = pickle.load(f)
+            
+            logger.info(f"Migrating {len(self.registered_faces)} faces from pickle to JSON")
+            
+            # Save in new format
+            if self.save_registered_faces():
+                # Backup old file
+                backup_file = old_file.with_suffix('.pkl.bak')
+                old_file.rename(backup_file)
+                logger.info(f"Migrated successfully, backup saved to {backup_file}")
+                return True
+            
+            return False
+        except Exception as e:
+            logger.error(f"Error migrating from pickle: {e}", exc_info=True)
+            return False
     
     def get_camera_preview(self, camera_index: int = 0) -> Optional[cv2.VideoCapture]:
         """Initialize camera for preview

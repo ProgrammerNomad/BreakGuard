@@ -2,6 +2,7 @@
 TOTP Authentication Module
 Handles Google Authenticator setup and verification
 """
+from __future__ import annotations
 
 import pyotp
 import qrcode
@@ -9,14 +10,26 @@ from io import BytesIO
 from PIL import Image
 from pathlib import Path
 import json
-from cryptography.fernet import Fernet
 import base64
 import os
+import logging
+from typing import Optional
+from exceptions import TOTPError, ConfigError
+
+logger = logging.getLogger(__name__)
+
+# Try to import Windows DPAPI
+try:
+    import win32crypt
+    DPAPI_AVAILABLE = True
+except ImportError:
+    DPAPI_AVAILABLE = False
+    logger.warning("win32crypt not available - falling back to Fernet encryption")
 
 class TOTPAuth:
     """Google Authenticator (TOTP) authentication handler"""
     
-    def __init__(self, data_dir: str = None):
+    def __init__(self, data_dir: str | Path = None):
         """Initialize TOTP authentication
         
         Args:
@@ -26,21 +39,28 @@ class TOTPAuth:
             base_dir = Path(__file__).parent.parent
             data_dir = base_dir / 'data'
         
-        self.data_dir = Path(data_dir)
+        self.data_dir: Path = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         
         self.secret_file = self.data_dir / 'totp_secret.enc'
         self.key_file = self.data_dir / '.key'
         
-        self._encryption_key = self._get_or_create_key()
+        # Use DPAPI if available, otherwise fallback to Fernet
+        self.use_dpapi = DPAPI_AVAILABLE
+        if not self.use_dpapi:
+            from cryptography.fernet import Fernet
+            self._encryption_key = self._get_or_create_key()
+        
         self._secret = None
     
     def _get_or_create_key(self) -> bytes:
-        """Get or create encryption key for TOTP secret
+        """Get or create Fernet encryption key (fallback when DPAPI unavailable)
         
         Returns:
             Encryption key bytes
         """
+        from cryptography.fernet import Fernet
+        
         if self.key_file.exists():
             with open(self.key_file, 'rb') as f:
                 return f.read()
@@ -66,7 +86,7 @@ class TOTPAuth:
         return self._secret
     
     def save_secret(self, secret: str = None) -> bool:
-        """Encrypt and save TOTP secret
+        """Encrypt and save TOTP secret using Windows DPAPI or Fernet
         
         Args:
             secret: TOTP secret to save. If None, uses last generated secret.
@@ -81,20 +101,34 @@ class TOTPAuth:
             return False
         
         try:
-            fernet = Fernet(self._encryption_key)
-            encrypted = fernet.encrypt(secret.encode())
+            if self.use_dpapi:
+                # Use Windows DPAPI for encryption
+                encrypted = win32crypt.CryptProtectData(
+                    secret.encode(),
+                    'BreakGuard TOTP Secret',  # Description
+                    None,  # Optional entropy
+                    None,  # Reserved
+                    None,  # Prompt struct
+                    0      # Flags
+                )
+            else:
+                # Fallback to Fernet encryption
+                from cryptography.fernet import Fernet
+                fernet = Fernet(self._encryption_key)
+                encrypted = fernet.encrypt(secret.encode())
             
             with open(self.secret_file, 'wb') as f:
                 f.write(encrypted)
             
             self._secret = secret
+            logger.info(f"TOTP secret saved using {'DPAPI' if self.use_dpapi else 'Fernet'}")
             return True
-        except Exception as e:
-            print(f"Error saving secret: {e}")
+        except (IOError, OSError) as e:
+            logger.error(f"Error saving TOTP secret: {e}", exc_info=True)
             return False
     
-    def load_secret(self) -> str:
-        """Load and decrypt TOTP secret
+    def load_secret(self) -> Optional[str]:
+        """Load and decrypt TOTP secret using Windows DPAPI or Fernet
         
         Returns:
             Decrypted secret string or None if not found
@@ -106,11 +140,26 @@ class TOTPAuth:
             with open(self.secret_file, 'rb') as f:
                 encrypted = f.read()
             
-            fernet = Fernet(self._encryption_key)
-            self._secret = fernet.decrypt(encrypted).decode()
+            if self.use_dpapi:
+                # Use Windows DPAPI for decryption
+                description, decrypted = win32crypt.CryptUnprotectData(
+                    encrypted,
+                    None,  # Optional entropy
+                    None,  # Reserved
+                    None,  # Prompt struct
+                    0      # Flags
+                )
+                self._secret = decrypted.decode()
+            else:
+                # Fallback to Fernet decryption
+                from cryptography.fernet import Fernet
+                fernet = Fernet(self._encryption_key)
+                self._secret = fernet.decrypt(encrypted).decode()
+            
+            logger.info(f"TOTP secret loaded using {'DPAPI' if self.use_dpapi else 'Fernet'}")
             return self._secret
         except Exception as e:
-            print(f"Error loading secret: {e}")
+            logger.error(f"Error loading secret: {e}", exc_info=True)
             return None
     
     def generate_qr_code(self, secret: str = None, name: str = "BreakGuard", issuer: str = "BreakGuard") -> Image.Image:

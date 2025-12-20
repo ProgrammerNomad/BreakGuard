@@ -2,11 +2,15 @@
 Low-Level Keyboard Blocker
 Uses Windows API hooks to block system shortcuts (Alt+Tab, Win+D, etc.)
 """
+from __future__ import annotations
 
 import ctypes
 from ctypes import wintypes
 import threading
 import atexit
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Windows API Constants
 WH_KEYBOARD_LL = 13
@@ -83,7 +87,7 @@ class KeyboardBlocker:
         )
         
         if not self.hook_id:
-            print(f"Failed to install keyboard hook: {ctypes.get_last_error()}")
+            logger.error(f"Failed to install keyboard hook: {ctypes.get_last_error()}")
             return
         
         # Message loop
@@ -144,11 +148,12 @@ class KeyboardBlocker:
 if __name__ == "__main__":
     # Test the blocker
     import time
-    print("Blocking keys for 10 seconds...")
+    logging.basicConfig(level=logging.INFO)
+    logger.info("Blocking keys for 10 seconds...")
     blocker = KeyboardBlocker()
     blocker.start()
     try:
         time.sleep(10)
     finally:
         blocker.stop()
-    print("Done.")
+    logger.info("Unblocked")

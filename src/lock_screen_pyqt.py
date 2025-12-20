@@ -2,20 +2,25 @@
 Lock Screen GUI (PyQt6)
 Fullscreen lock interface with TOTP and face verification
 """
+from __future__ import annotations
 
-from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QPushButton, QLineEdit, QFrame, QApplication,
-                             QTabWidget)
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread
-from PyQt6.QtGui import QFont, QImage, QPixmap
+                             QTabWidget, QSizePolicy)
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread, QPropertyAnimation, QSequentialAnimationGroup, QPoint
+from PyQt6.QtGui import QFont, QImage, QPixmap, QKeyEvent
 import cv2
 import os
+import logging
 from datetime import datetime
 
 from config_manager import ConfigManager
 from totp_auth import TOTPAuth
 from face_verification import FaceVerification
 from keyboard_blocker import KeyboardBlocker
+from theme.theme import load_stylesheet
+
+logger = logging.getLogger(__name__)
 
 class CameraThread(QThread):
     """Thread for camera capture"""
@@ -27,7 +32,7 @@ class CameraThread(QThread):
         self.camera = None
         self.camera_index = camera_index
     
-    def run(self):
+    def run(self) -> None:
         """Run camera capture loop"""
         # Use CAP_DSHOW for Windows compatibility
         self.camera = cv2.VideoCapture(self.camera_index, cv2.CAP_DSHOW)
@@ -39,7 +44,7 @@ class CameraThread(QThread):
                 self.frame_ready.emit(frame)
             self.msleep(33)  # ~30 FPS
     
-    def stop(self):
+    def stop(self) -> None:
         """Stop camera capture"""
         self.running = False
         if self.camera:
@@ -64,6 +69,7 @@ class LockScreen(QWidget):
         self.keyboard_blocker = KeyboardBlocker()
         
         self.attempts_remaining = 5
+        self.lockout_count = 0  # Track number of lockouts for exponential backoff
         self.camera_thread = None
         self.current_frame = None
         
@@ -83,8 +89,16 @@ class LockScreen(QWidget):
         
         # Block keyboard shortcuts
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        
+        # Fade in animation
+        self.setWindowOpacity(0)
+        self.animation = QPropertyAnimation(self, b"windowOpacity")
+        self.animation.setDuration(500)
+        self.animation.setStartValue(0)
+        self.animation.setEndValue(1)
+        self.animation.start()
     
-    def _setup_ui(self):
+    def _setup_ui(self) -> None:
         """Setup lock screen UI"""
         # Make fullscreen and always on top
         self.setWindowFlags(
@@ -92,44 +106,9 @@ class LockScreen(QWidget):
             Qt.WindowType.WindowStaysOnTopHint
         )
         
-        # Set dark background
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #1e1e1e;
-                color: #ffffff;
-            }
-            QPushButton {
-                background-color: #0d7377;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                padding: 12px 24px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #14a19f;
-            }
-            QPushButton:pressed {
-                background-color: #0a5456;
-            }
-            QLineEdit {
-                background-color: #2d2d2d;
-                border: 2px solid #3d3d3d;
-                border-radius: 5px;
-                padding: 10px;
-                font-size: 24px;
-                color: white;
-                text-align: center;
-            }
-            QLineEdit:focus {
-                border-color: #0d7377;
-            }
-            QFrame {
-                background-color: #2d2d2d;
-                border-radius: 10px;
-            }
-        """)
+        # Set object name for styling
+        self.setObjectName("LockScreen")
+        # Theme is loaded at app level in main.py
         
         # Main layout
         layout = QVBoxLayout(self)
@@ -161,7 +140,7 @@ class LockScreen(QWidget):
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         subtitle_font = QFont("Segoe UI", 16)
         subtitle.setFont(subtitle_font)
-        subtitle.setStyleSheet("color: #a0a0a0;")
+        subtitle.setStyleSheet("color: #8c8c8c;")  # WCAG AA compliant on dark background
         layout.addWidget(subtitle)
         
         # Current time
@@ -169,7 +148,7 @@ class LockScreen(QWidget):
         self.time_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         time_font = QFont("Segoe UI", 24)
         self.time_label.setFont(time_font)
-        self.time_label.setStyleSheet("color: #a0a0a0;")
+        self.time_label.setStyleSheet("color: #8c8c8c;")  # WCAG AA compliant
         layout.addWidget(self.time_label)
         
         # Update time every second
@@ -181,32 +160,11 @@ class LockScreen(QWidget):
         
         # Authentication Tabs
         self.auth_tabs = QTabWidget()
-        self.auth_tabs.setFixedWidth(650)  # Slightly wider than frames
-        self.auth_tabs.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid #3d3d3d;
-                background-color: #2d2d2d;
-                border-radius: 5px;
-            }
-            QTabBar::tab {
-                background-color: #1e1e1e;
-                color: #a0a0a0;
-                padding: 12px 30px;
-                border-top-left-radius: 5px;
-                border-top-right-radius: 5px;
-                margin-right: 2px;
-                font-size: 14px;
-                font-weight: bold;
-            }
-            QTabBar::tab:selected {
-                background-color: #2d2d2d;
-                color: #ffffff;
-                border-bottom: 2px solid #0d7377;
-            }
-            QTabBar::tab:hover:!selected {
-                background-color: #252525;
-            }
-        """)
+        self.auth_tabs.setMaximumWidth(650)
+        self.auth_tabs.setMinimumWidth(320)
+        self.auth_tabs.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        self.auth_tabs.setAccessibleName("Authentication methods")
+        self.auth_tabs.setAccessibleName("Authentication methods")
         
         # TOTP Tab
         if self.config.is_totp_enabled():
@@ -231,12 +189,14 @@ class LockScreen(QWidget):
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         status_font = QFont("Segoe UI", 14)
         self.status_label.setFont(status_font)
+        self.status_label.setAccessibleName("Status message")
         layout.addWidget(self.status_label)
         
         # Attempts remaining
         self.attempts_label = QLabel(f"Attempts remaining: {self.attempts_remaining}/5")
         self.attempts_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.attempts_label.setStyleSheet("color: #ffa500;")
+        self.attempts_label.setAccessibleName("Attempts remaining")
         layout.addWidget(self.attempts_label)
         
         layout.addSpacing(20)
@@ -246,14 +206,15 @@ class LockScreen(QWidget):
         self.break_timer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.break_timer_label.setFont(QFont("Segoe UI", 18))
         self.break_timer_label.setStyleSheet("color: #ffffff;")
+        self.break_timer_label.setAccessibleName("Break time remaining")
         layout.addWidget(self.break_timer_label)
     
     def _create_totp_section(self) -> QFrame:
         """Create TOTP input section"""
-        frame = QFrame()
-        frame.setMaximumWidth(600)
+        self.totp_frame = QFrame()
+        self.totp_frame.setMaximumWidth(600)
         
-        layout = QVBoxLayout(frame)
+        layout = QVBoxLayout(self.totp_frame)
         layout.setSpacing(15)
         
         # Title
@@ -271,26 +232,71 @@ class LockScreen(QWidget):
         for i in range(6):
             input_box = QLineEdit()
             input_box.setMaxLength(1)
-            input_box.setFixedSize(60, 70)
+            input_box.setMinimumSize(50, 60)
+            input_box.setMaximumSize(80, 90)
             input_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            input_box.setProperty("class", "otp-input")
+            input_box.setAccessibleName(f"Digit {i+1}")
             input_box.textChanged.connect(lambda text, idx=i: self._on_digit_entered(text, idx))
+            # Track focus for visual indication
+            input_box.focusInEvent = lambda event, idx=i: self._on_otp_focus_in(event, idx)
+            input_box.focusOutEvent = lambda event, idx=i: self._on_otp_focus_out(event, idx)
+            # Install event filter for paste support
+            input_box.installEventFilter(self)
             self.otp_inputs.append(input_box)
             input_layout.addWidget(input_box)
         
         layout.addLayout(input_layout)
         
+        # Clear button
+        self.clear_button = QPushButton("Clear")
+        self.clear_button.clicked.connect(self._clear_totp_inputs)
+        self.clear_button.setToolTip("Clear all digits (Esc)")
+        self.clear_button.setAccessibleName("Clear TOTP inputs")
+        self.clear_button.setMaximumWidth(100)
+        layout.addWidget(self.clear_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        
         # Unlock button
-        self.unlock_button = QPushButton("Unlock")
+        self.unlock_button = QPushButton("&Unlock")
         self.unlock_button.clicked.connect(self._verify_totp)
-        layout.addWidget(self.unlock_button)
+        self.unlock_button.setToolTip("Click or press Alt+U to unlock screen")
+        self.unlock_button.setAccessibleName("Unlock button")
+        self.unlock_button.setShortcut("Alt+U")
+        
+        # Loading indicator (spinner animation)
+        self.loading_label = QLabel("⟳ Verifying...")
+        self.loading_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.loading_label.setStyleSheet("color: #0d7377; font-weight: bold;")
+        self.loading_label.setVisible(False)  # Hidden by default
+        self.loading_spinner_timer = QTimer()
+        self.spinner_index = 0
+        self.spinner_chars = ["⟳", "⟳", "⟳"]  # Animation frames
+        self.loading_spinner_timer.timeout.connect(self._update_spinner)
+        
+        # Set tab order for OTP inputs
+        if self.otp_inputs:
+            for i in range(len(self.otp_inputs) - 1):
+                self.totp_frame.setTabOrder(self.otp_inputs[i], self.otp_inputs[i+1])
+            self.totp_frame.setTabOrder(self.otp_inputs[-1], self.clear_button)
+            self.totp_frame.setTabOrder(self.clear_button, self.unlock_button)
+        
+        # Button layout with loading indicator
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        button_layout.addWidget(self.unlock_button)
+        button_layout.addStretch()
+        layout.addLayout(button_layout)
+        
+        # Loading indicator layout
+        layout.addWidget(self.loading_label)
         
         # Info
         info = QLabel("💡 Code changes every 30 seconds")
         info.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        info.setStyleSheet("color: #888888; font-size: 12px;")
+        info.setStyleSheet("color: #b3b3b3; font-size: 12px;")  # Better contrast on dark background
         layout.addWidget(info)
         
-        return frame
+        return self.totp_frame
     
     def _create_face_section(self) -> QFrame:
         """Create face verification section"""
@@ -310,18 +316,63 @@ class LockScreen(QWidget):
         # Camera preview
         self.camera_label = QLabel("Camera preview will appear here")
         self.camera_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.camera_label.setFixedSize(400, 300)
-        self.camera_label.setStyleSheet("border: 2px solid #3d3d3d;")
+        self.camera_label.setMinimumSize(400, 300)
+        self.camera_label.setProperty("class", "qr-box")
+        self.camera_label.setAccessibleName("Camera preview")
         layout.addWidget(self.camera_label, alignment=Qt.AlignmentFlag.AlignCenter)
         
         # Scan button
         self.scan_button = QPushButton("Scan Face")
         self.scan_button.clicked.connect(self._start_face_scan)
+        self.scan_button.setToolTip("Start face scanning for verification")
+        self.scan_button.setAccessibleName("Scan Face button")
         layout.addWidget(self.scan_button)
+        
+        # Face verification loading indicator
+        self.face_loading_label = QLabel("⟳ Analyzing face...")
+        self.face_loading_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.face_loading_label.setStyleSheet("color: #0d7377; font-weight: bold;")
+        self.face_loading_label.setVisible(False)
+        layout.addWidget(self.face_loading_label)
+        
+        # Set tab order
+        frame.setTabOrder(self.scan_button, self.scan_button)
         
         return frame
     
-    def _on_digit_entered(self, text: str, index: int):
+    def eventFilter(self, obj, event):
+        """Event filter for paste support"""
+        if event.type() == QKeyEvent.Type.KeyPress:
+            if event.matches(QKeyEvent.StandardKey.Paste):
+                # Handle paste event
+                clipboard = QApplication.clipboard()
+                text = clipboard.text().strip()
+                
+                # Check if it's a 6-digit code
+                if text.isdigit() and len(text) == 6:
+                    # Fill all input boxes
+                    for i, digit in enumerate(text):
+                        self.otp_inputs[i].setText(digit)
+                    # Auto-submit
+                    self._verify_totp()
+                    return True
+        
+        return super().eventFilter(obj, event)
+    
+    def _clear_totp_inputs(self) -> None:
+        """Clear all TOTP input boxes"""
+        for box in self.otp_inputs:
+            box.clear()
+        self.otp_inputs[0].setFocus()
+        self._show_status("", False)
+    
+    def _clear_totp_inputs_after_error(self) -> None:
+        """Clear TOTP inputs after showing error message"""
+        for box in self.otp_inputs:
+            box.clear()
+        self.otp_inputs[0].setFocus()
+    
+    def _on_digit_entered(self, text: str, index: int) -> None:
         """Handle digit entry in OTP boxes"""
         if text and index < 5:
             # Move to next box
@@ -331,7 +382,25 @@ class LockScreen(QWidget):
         if all(box.text() for box in self.otp_inputs):
             self._verify_totp()
     
-    def _verify_totp(self):
+    def _on_otp_focus_in(self, event, index: int) -> None:
+        """Handle TOTP input gaining focus - add visual indicator"""
+        input_box = self.otp_inputs[index]
+        # Add active class for enhanced styling
+        input_box.setProperty("active", True)
+        input_box.setStyleSheet(input_box.styleSheet())  # Force refresh
+        # Call original handler
+        QLineEdit.focusInEvent(input_box, event)
+    
+    def _on_otp_focus_out(self, event, index: int) -> None:
+        """Handle TOTP input losing focus - remove visual indicator"""
+        input_box = self.otp_inputs[index]
+        # Remove active class
+        input_box.setProperty("active", False)
+        input_box.setStyleSheet(input_box.styleSheet())  # Force refresh
+        # Call original handler
+        QLineEdit.focusOutEvent(input_box, event)
+    
+    def _verify_totp(self) -> None:
         """Verify TOTP code"""
         # Get code from input boxes
         code = ''.join(box.text() for box in self.otp_inputs)
@@ -340,19 +409,50 @@ class LockScreen(QWidget):
             self._show_status("Please enter all 6 digits", False)
             return
         
+        # Show loading indicator
+        self._show_loading(True)
+        self.unlock_button.setEnabled(False)
+        
+        # Disable inputs during verification
+        for box in self.otp_inputs:
+            box.setEnabled(False)
+        self.clear_button.setEnabled(False)
+        
         # Verify
         if self.totp.verify_code(code):
             self._show_status("✅ Code verified!", True)
-            self._unlock()
+            QTimer.singleShot(500, self._unlock)  # Give user feedback before unlocking
         else:
+            # Hide loading and re-enable inputs on failure
+            self._show_loading(False)
+            self.unlock_button.setEnabled(True)
+            for box in self.otp_inputs:
+                box.setEnabled(True)
+            self.clear_button.setEnabled(True)
+            
             self.attempts_remaining -= 1
             self.attempts_label.setText(f"Attempts remaining: {self.attempts_remaining}/5")
             
             if self.attempts_remaining <= 0:
-                self._show_status("❌ Too many failed attempts. Try again in 1 minute.", False)
-                self._disable_inputs(60)
+                # Exponential backoff: 1m, 5m, 15m
+                self.lockout_count += 1
+                lockout_times = [60, 300, 900]  # seconds
+                lockout_duration = lockout_times[min(self.lockout_count - 1, len(lockout_times) - 1)]
+                minutes = lockout_duration // 60
+                
+                self._show_status(f"❌ Too many attempts! Locked for {minutes} minute(s)", False)
+                self._shake_totp_inputs()
+                self._disable_inputs(lockout_duration)
+                
+                # Log security event
+                logger.warning(f"Authentication lockout #{self.lockout_count} triggered: {lockout_duration}s")
             else:
-                self._show_status("❌ Invalid code. Try again.", False)
+                self._show_status("❌ Invalid code!", False)
+                self._shake_totp_inputs()
+                
+                # Clear inputs after 1 second
+                QTimer.singleShot(1000, self._clear_totp_inputs_after_error)
+                self._shake_totp_inputs()
             
             # Clear inputs
             for box in self.otp_inputs:
@@ -373,7 +473,7 @@ class LockScreen(QWidget):
             # Auto-verify after 3 seconds
             QTimer.singleShot(3000, self._verify_face)
     
-    def _on_camera_frame(self, frame):
+    def _on_camera_frame(self, frame) -> None:
         """Update camera preview"""
         self.current_frame = frame
         
@@ -397,16 +497,23 @@ class LockScreen(QWidget):
     
     def _verify_face(self):
         """Verify face from camera"""
+        # Show loading indicator
+        self.face_loading_label.setVisible(True)
+        self.loading_spinner_timer.start(300) if not self.loading_spinner_timer.isActive() else None
+        
         if self.current_frame is None:
             self._show_status("❌ No camera frame available", False)
+            self.face_loading_label.setVisible(False)
             self._stop_camera()
             return
         
         if self.face_verifier.verify_face(self.current_frame):
+            self.face_loading_label.setVisible(False)
             self._show_status("✅ Face verified!", True)
             self._stop_camera()
-            self._unlock()
+            QTimer.singleShot(500, self._unlock)
         else:
+            self.face_loading_label.setVisible(False)
             self.attempts_remaining -= 1
             self.attempts_label.setText(f"Attempts remaining: {self.attempts_remaining}/5")
             
@@ -418,7 +525,7 @@ class LockScreen(QWidget):
             
             self._stop_camera()
     
-    def _stop_camera(self):
+    def _stop_camera(self) -> None:
         """Stop camera thread"""
         if self.camera_thread:
             self.camera_thread.stop()
@@ -430,7 +537,7 @@ class LockScreen(QWidget):
         self.camera_label.clear()
         self.camera_label.setText("Camera preview will appear here")
     
-    def _check_task_manager(self):
+    def _check_task_manager(self) -> None:
         """Check if Task Manager is running and kill it"""
         try:
             # Use tasklist to check for Taskmgr.exe
@@ -445,21 +552,46 @@ class LockScreen(QWidget):
         except Exception:
             pass
 
-    def _unlock(self):
+    def _show_loading(self, show: bool) -> None:
+        """Show or hide loading indicator
+        
+        Args:
+            show: Whether to show the loading indicator
+        """
+        if show:
+            self.loading_label.setVisible(True)
+            self.spinner_index = 0
+            self.loading_spinner_timer.start(300)  # Update spinner every 300ms
+        else:
+            self.loading_label.setVisible(False)
+            self.loading_spinner_timer.stop()
+    
+    def _update_spinner(self) -> None:
+        """Update spinner animation"""
+        spinner_frames = ["⟳", "↻", "⟲"]
+        self.spinner_index = (self.spinner_index + 1) % len(spinner_frames)
+        frame = spinner_frames[self.spinner_index]
+        self.loading_label.setText(f"{frame} Verifying...")
+        # Also update face loading label if visible
+        if self.face_loading_label.isVisible():
+            self.face_loading_label.setText(f"{frame} Analyzing face...")
+    
+    def _unlock(self) -> None:
         """Unlock screen"""
+        self._show_loading(False)  # Stop loading animation
         self._stop_camera()
         self.keyboard_blocker.stop()
         self.tm_timer.stop()
         self.unlocked.emit()
         self.close()
     
-    def _show_status(self, message: str, success: bool):
+    def _show_status(self, message: str, success: bool) -> None:
         """Show status message"""
         color = "#00ff00" if success else "#ff0000"
         self.status_label.setText(message)
         self.status_label.setStyleSheet(f"color: {color}; font-weight: bold;")
     
-    def _on_tab_changed(self, index):
+    def _on_tab_changed(self, index) -> None:
         """Handle tab switching"""
         # Stop camera if switching away from Face Verification
         # Assuming Face Verification is the second tab (index 1) or checking tab text
@@ -472,7 +604,7 @@ class LockScreen(QWidget):
         if "Authenticator Code" in current_tab_text and self.otp_inputs:
             self.otp_inputs[0].setFocus()
 
-    def _disable_inputs(self, seconds: int):
+    def _disable_inputs(self, seconds: int) -> None:
         """Disable inputs for specified seconds"""
         for box in self.otp_inputs:
             box.setEnabled(False)
@@ -482,7 +614,7 @@ class LockScreen(QWidget):
         # Re-enable after timeout
         QTimer.singleShot(seconds * 1000, self._enable_inputs)
     
-    def _enable_inputs(self):
+    def _enable_inputs(self) -> None:
         """Re-enable inputs"""
         for box in self.otp_inputs:
             box.setEnabled(True)
@@ -491,7 +623,50 @@ class LockScreen(QWidget):
         self.attempts_remaining = 5
         self.attempts_label.setText(f"Attempts remaining: {self.attempts_remaining}/5")
     
-    def _update_time(self):
+    def _shake_totp_inputs(self) -> None:
+        """Shake animation for invalid TOTP code"""
+        if not hasattr(self, 'totp_frame') or self.totp_frame is None:
+            return
+        
+        # Create shake animation sequence
+        original_pos = self.totp_frame.pos()
+        shake_distance = 10
+        shake_duration = 50
+        
+        animation_group = QSequentialAnimationGroup(self)
+        
+        # Shake left
+        anim1 = QPropertyAnimation(self.totp_frame, b"pos")
+        anim1.setDuration(shake_duration)
+        anim1.setStartValue(original_pos)
+        anim1.setEndValue(QPoint(original_pos.x() - shake_distance, original_pos.y()))
+        animation_group.addAnimation(anim1)
+        
+        # Shake right
+        anim2 = QPropertyAnimation(self.totp_frame, b"pos")
+        anim2.setDuration(shake_duration)
+        anim2.setStartValue(QPoint(original_pos.x() - shake_distance, original_pos.y()))
+        anim2.setEndValue(QPoint(original_pos.x() + shake_distance, original_pos.y()))
+        animation_group.addAnimation(anim2)
+        
+        # Shake left again
+        anim3 = QPropertyAnimation(self.totp_frame, b"pos")
+        anim3.setDuration(shake_duration)
+        anim3.setStartValue(QPoint(original_pos.x() + shake_distance, original_pos.y()))
+        anim3.setEndValue(QPoint(original_pos.x() - shake_distance, original_pos.y()))
+        animation_group.addAnimation(anim3)
+        
+        # Return to center
+        anim4 = QPropertyAnimation(self.totp_frame, b"pos")
+        anim4.setDuration(shake_duration)
+        anim4.setStartValue(QPoint(original_pos.x() - shake_distance, original_pos.y()))
+        anim4.setEndValue(original_pos)
+        animation_group.addAnimation(anim4)
+        
+        animation_group.start()
+        self.shake_animation = animation_group  # Keep reference
+    
+    def _update_time(self) -> None:
         """Update current time display"""
         self.time_label.setText(datetime.now().strftime("%I:%M %p"))
         
@@ -509,7 +684,7 @@ class LockScreen(QWidget):
         seconds = self.break_remaining_seconds % 60
         return f"Break duration: {minutes}:{seconds:02d} remaining"
     
-    def _load_authentication(self):
+    def _load_authentication(self) -> None:
         """Load TOTP and face verification data"""
         self.totp.load_secret()
         self.face_verifier.load_registered_faces()
@@ -521,10 +696,8 @@ class LockScreen(QWidget):
             event.ignore()
             return
         
-        # Allow Escape only in debug mode
+        # Block Escape key (no debug backdoor in production)
         if event.key() == Qt.Key.Key_Escape:
-            # Uncomment for testing:
-            # self._unlock()
             event.ignore()
             return
         
@@ -537,3 +710,36 @@ class LockScreen(QWidget):
         if hasattr(self, 'tm_timer'):
             self.tm_timer.stop()
         super().closeEvent(event)
+
+class OverlayScreen(QWidget):
+    """Simple overlay for secondary monitors"""
+    def __init__(self):
+        super().__init__()
+        self.setWindowFlags(
+            Qt.WindowType.FramelessWindowHint |
+            Qt.WindowType.WindowStaysOnTopHint |
+            Qt.WindowType.Tool
+        )
+        self.setStyleSheet("background-color: #000000;")
+        
+        layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        # Logo
+        logo_label = QLabel()
+        logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        from pathlib import Path
+        assets_dir = Path(__file__).parent.parent / 'assets'
+        logo_path = assets_dir / 'logo.png'
+        
+        if logo_path.exists():
+            pixmap = QPixmap(str(logo_path))
+            scaled_pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            logo_label.setPixmap(scaled_pixmap)
+            layout.addWidget(logo_label)
+        
+        label = QLabel("Please complete authentication on the main screen")
+        label.setStyleSheet("color: white; font-size: 24px; font-family: 'Segoe UI';")
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(label)
+

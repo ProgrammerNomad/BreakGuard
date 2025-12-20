@@ -6,6 +6,8 @@ Main entry point for the application
 import sys
 import os
 import argparse
+import logging
+import logging.handlers
 from pathlib import Path
 
 # Add src directory to Python path
@@ -14,9 +16,48 @@ sys.path.insert(0, str(src_path))
 
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import Qt
+from theme.theme import load_stylesheet
+
+def setup_logging():
+    """Configure application logging"""
+    log_dir = Path(__file__).parent / 'logs'
+    log_dir.mkdir(exist_ok=True)
+    
+    log_file = log_dir / 'breakguard.log'
+    
+    # Create formatters
+    file_formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    console_formatter = logging.Formatter(
+        '%(levelname)s: %(message)s'
+    )
+    
+    # File handler (rotating, 5MB max, 3 backups)
+    file_handler = logging.handlers.RotatingFileHandler(
+        log_file, maxBytes=5*1024*1024, backupCount=3, encoding='utf-8'
+    )
+    file_handler.setFormatter(file_formatter)
+    file_handler.setLevel(logging.DEBUG)
+    
+    # Console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(console_formatter)
+    console_handler.setLevel(logging.INFO)
+    
+    # Root logger configuration
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+    
+    logging.info("Logging initialized")
 
 def main():
     """Main entry point"""
+    setup_logging()
+    logger = logging.getLogger(__name__)
+    
     parser = argparse.ArgumentParser(description='BreakGuard - Your Health Guardian')
     parser.add_argument('--setup', action='store_true', help='Run setup wizard')
     parser.add_argument('--settings', action='store_true', help='Open settings')
@@ -31,6 +72,7 @@ def main():
         QApplication.setHighDpiScaleFactorRoundingPolicy(
             Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
         )
+        QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps)
     except AttributeError:
         pass  # Not available in all PyQt6 versions
     
@@ -51,6 +93,9 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName("BreakGuard")
     app.setOrganizationName("BreakGuard")
+    
+    # Apply global theme
+    app.setStyleSheet(load_stylesheet())
     
     # Set application icon
     from PyQt6.QtGui import QIcon
