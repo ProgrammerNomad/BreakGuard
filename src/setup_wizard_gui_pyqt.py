@@ -1327,68 +1327,135 @@ class CompletePage(QWizardPage):
     
     def __init__(self):
         super().__init__()
-        self.setTitle("Setup Complete!")
-        self.setSubTitle("BreakGuard is ready to protect your health")
+        # Clear default header
+        self.setTitle("")
+        self.setSubTitle("")
         
         layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
         layout.setSpacing(20)
+        layout.setContentsMargins(40, 40, 40, 40)
         
-        # Success icon
-        success = QLabel("✅")
-        success.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        success_font = QFont("Segoe UI", 72)
-        success.setFont(success_font)
-        layout.addWidget(success)
+        # Success Icon
+        icon_label = QLabel("✅")
+        icon_label.setFont(QFont("Segoe UI", 64))
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # Optional: Add a drop shadow to the icon for depth
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(20)
+        shadow.setColor(QColor(0, 0, 0, 30))
+        shadow.setOffset(0, 4)
+        icon_label.setGraphicsEffect(shadow)
+        layout.addWidget(icon_label)
         
-        title = QLabel("Setup Complete!")
+        # Title
+        title = QLabel("Setup complete")
+        title.setFont(QFont("Segoe UI", 24, QFont.Weight.Bold))
+        title.setStyleSheet("color: #2c3e50;")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title_font = QFont("Segoe UI", 24, QFont.Weight.Bold)
-        title.setFont(title_font)
         layout.addWidget(title)
         
-        subtitle = QLabel("BreakGuard is ready to protect your health\nand productivity!")
+        # Subtitle
+        subtitle = QLabel("BreakGuard is ready to protect your health and productivity.")
+        subtitle.setFont(QFont("Segoe UI", 11))
+        subtitle.setStyleSheet("color: #7f8c8d;")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setProperty("class", "subtitle")
         layout.addWidget(subtitle)
-        
-        layout.addSpacing(20)
-        
-        # Summary
-        self.summary_label = QLabel()
-        self.summary_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.summary_label.setProperty("class", "card")
-        layout.addWidget(self.summary_label)
         
         layout.addSpacing(10)
         
-        info = QLabel("The app will start in the system tray.\nRight-click the icon to access settings.")
-        info.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        info.setProperty("class", "text-secondary")
-        layout.addWidget(info)
+        # Summary Card
+        self.summary_card = QFrame()
+        self.summary_card.setStyleSheet("""
+            QFrame {
+                background-color: #ffffff;
+                border-radius: 10px;
+                border: 1px solid #e0e0e0;
+            }
+            QLabel {
+                border: none;
+                font-family: "Segoe UI";
+                font-size: 13px;
+            }
+        """)
+        self.summary_layout = QVBoxLayout(self.summary_card)
+        self.summary_layout.setSpacing(10)
+        self.summary_layout.setContentsMargins(25, 20, 25, 20)
+        
+        # Header for summary
+        summary_header = QLabel("Your settings")
+        summary_header.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        summary_header.setStyleSheet("color: #95a5a6; text-transform: uppercase; letter-spacing: 1px;")
+        self.summary_layout.addWidget(summary_header)
+        self.summary_layout.addSpacing(5)
+        
+        # Placeholder for rows (will be added in initializePage)
+        self.rows_layout = QVBoxLayout()
+        self.rows_layout.setSpacing(8)
+        self.summary_layout.addLayout(self.rows_layout)
+        
+        layout.addWidget(self.summary_card)
+        
+        layout.addSpacing(20)
+        
+        # Footer Info
+        footer = QLabel("BreakGuard will now run in the system tray.\nYou can adjust settings anytime by right-clicking the tray icon.")
+        footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        footer.setStyleSheet("color: #95a5a6; font-size: 11px;")
+        layout.addWidget(footer)
         
         layout.addStretch()
         self.setLayout(layout)
     
     def initializePage(self):
-        """Called when page is shown"""
-        # Build summary from wizard fields
+        """Populate summary when page is shown"""
+        # Clear previous items
+        while self.rows_layout.count():
+            item = self.rows_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        
         wizard = self.wizard()
         
+        # Get values
         work_interval = wizard.field("work_interval")
         warning_time = wizard.field("warning_time")
         totp_enabled = wizard.field("totp_enabled")
         face_enabled = wizard.field("face_enabled")
         tinxy_enabled = wizard.field("tinxy_enabled")
         
-        summary = f"""Configuration Summary:
+        # Add rows
+        self._add_row("⏱️", "Work interval", f"{work_interval} minutes")
+        self._add_row("⏰", "Warning before lock", f"{warning_time} minutes")
+        self._add_row("🔐", "Authentication", "Google Authenticator" if totp_enabled else "Disabled")
+        self._add_row("👤", "Face verification", "Enabled" if face_enabled else "Disabled")
+        self._add_row("🔌", "Tinxy integration", "Enabled" if tinxy_enabled else "Disabled")
 
-⏰ Work interval: {work_interval} minutes
-⚠️ Warning time: {warning_time} minutes
-🔐 Authentication: {"Google Authenticator" if totp_enabled else "Disabled"}
-👤 Face verification: {"Enabled" if face_enabled else "Disabled"}
-🔌 Tinxy IoT: {"Enabled" if tinxy_enabled else "Disabled"}"""
+    def _add_row(self, icon, label, value):
+        row = QHBoxLayout()
         
-        self.summary_label.setText(summary)
+        icon_lbl = QLabel(icon)
+        icon_lbl.setFixedWidth(25)
+        icon_lbl.setStyleSheet("font-size: 14px;")
+        
+        label_lbl = QLabel(label + ":")
+        label_lbl.setStyleSheet("color: #7f8c8d; font-weight: 500;")
+        
+        val_lbl = QLabel(str(value))
+        val_lbl.setStyleSheet("color: #2c3e50; font-weight: bold;")
+        val_lbl.setAlignment(Qt.AlignmentFlag.AlignRight)
+        
+        row.addWidget(icon_lbl)
+        row.addWidget(label_lbl)
+        row.addStretch()
+        row.addWidget(val_lbl)
+        
+        container = QFrame()
+        container.setLayout(row)
+        container.setStyleSheet("background: transparent; border: none;")
+        row.setContentsMargins(0, 0, 0, 0)
+        
+        self.rows_layout.addWidget(container)
 
 class SetupWizard(QWizard):
     """Main setup wizard"""
