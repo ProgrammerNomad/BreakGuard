@@ -4,7 +4,8 @@ Fullscreen lock interface with TOTP and face verification
 """
 
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QPushButton, QLineEdit, QFrame, QApplication)
+                             QPushButton, QLineEdit, QFrame, QApplication,
+                             QTabWidget)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread
 from PyQt6.QtGui import QFont, QImage, QPixmap
 import cv2
@@ -165,17 +166,52 @@ class LockScreen(QWidget):
         
         layout.addSpacing(30)
         
-        # TOTP Input Section
+        # Authentication Tabs
+        self.auth_tabs = QTabWidget()
+        self.auth_tabs.setFixedWidth(650)  # Slightly wider than frames
+        self.auth_tabs.setStyleSheet("""
+            QTabWidget::pane {
+                border: 1px solid #3d3d3d;
+                background-color: #2d2d2d;
+                border-radius: 5px;
+            }
+            QTabBar::tab {
+                background-color: #1e1e1e;
+                color: #a0a0a0;
+                padding: 12px 30px;
+                border-top-left-radius: 5px;
+                border-top-right-radius: 5px;
+                margin-right: 2px;
+                font-size: 14px;
+                font-weight: bold;
+            }
+            QTabBar::tab:selected {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                border-bottom: 2px solid #0d7377;
+            }
+            QTabBar::tab:hover:!selected {
+                background-color: #252525;
+            }
+        """)
+        
+        # TOTP Tab
         if self.config.is_totp_enabled():
             totp_frame = self._create_totp_section()
-            layout.addWidget(totp_frame)
-        
-        layout.addWidget(QLabel("OR"))
-        
-        # Face Verification Section
+            # Remove frame styling as it's now inside tab
+            totp_frame.setStyleSheet("background-color: transparent;")
+            self.auth_tabs.addTab(totp_frame, "🔐 Authenticator Code")
+            
+        # Face Verification Tab
         if self.config.is_face_verification_enabled():
             face_frame = self._create_face_section()
-            layout.addWidget(face_frame)
+            face_frame.setStyleSheet("background-color: transparent;")
+            self.auth_tabs.addTab(face_frame, "👤 Face Verification")
+            
+        # Handle tab changes
+        self.auth_tabs.currentChanged.connect(self._on_tab_changed)
+        
+        layout.addWidget(self.auth_tabs, alignment=Qt.AlignmentFlag.AlignCenter)
         
         # Status message
         self.status_label = QLabel("")
@@ -410,6 +446,19 @@ class LockScreen(QWidget):
         self.status_label.setText(message)
         self.status_label.setStyleSheet(f"color: {color}; font-weight: bold;")
     
+    def _on_tab_changed(self, index):
+        """Handle tab switching"""
+        # Stop camera if switching away from Face Verification
+        # Assuming Face Verification is the second tab (index 1) or checking tab text
+        current_tab_text = self.auth_tabs.tabText(index)
+        
+        if "Face Verification" not in current_tab_text:
+            self._stop_camera()
+            
+        # If switching to TOTP, focus first input
+        if "Authenticator Code" in current_tab_text and self.otp_inputs:
+            self.otp_inputs[0].setFocus()
+
     def _disable_inputs(self, seconds: int):
         """Disable inputs for specified seconds"""
         for box in self.otp_inputs:
