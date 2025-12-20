@@ -230,7 +230,7 @@ class BreakGuardApp(QObject):
         # Update tray
         self.status_action.setText("🟢 Active")
         self.tray_icon.showMessage(
-            "✅ BreakGuard Started",
+            "BreakGuard Started",
             f"Work timer started. Break in {self.time_remaining_seconds // 60} minutes.",
             QSystemTrayIcon.MessageIcon.Information,
             3000
