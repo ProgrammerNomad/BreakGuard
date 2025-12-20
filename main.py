@@ -41,10 +41,26 @@ def main():
     # Check if first time setup is needed
     config_path = Path(__file__).parent / 'config.json'
     
+    # Keep references to prevent garbage collection
+    global wizard, break_guard, settings
+    wizard = None
+    break_guard = None
+    settings = None
+
+    def start_app():
+        """Start the main application"""
+        global break_guard
+        from work_timer import BreakGuardApp
+        # Ensure app doesn't quit when wizard closes
+        app.setQuitOnLastWindowClosed(False)
+        break_guard = BreakGuardApp()
+        break_guard.start()
+
     if args.setup or not config_path.exists():
         # Run setup wizard
         from setup_wizard_gui_pyqt import SetupWizard
         wizard = SetupWizard()
+        wizard.setup_completed.connect(start_app)
         wizard.show()
     elif args.settings:
         # Open settings
@@ -53,9 +69,7 @@ def main():
         settings.show()
     else:
         # Run main application
-        from work_timer import BreakGuardApp
-        break_guard = BreakGuardApp()
-        break_guard.start()
+        start_app()
     
     sys.exit(app.exec())
 

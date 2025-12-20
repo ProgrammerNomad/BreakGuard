@@ -14,7 +14,7 @@ class ConfigManager:
     DEFAULT_CONFIG = {
         "work_interval_minutes": 60,
         "warning_before_minutes": 5,
-        "break_duration_minutes": 10,
+        "break_duration_minutes": 5,
         "totp_enabled": True,
         "face_verification_enabled": True,
         "tinxy_enabled": False,

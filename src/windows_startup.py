@@ -43,6 +43,9 @@ class WindowsStartup:
             # Running as Python script
             main_py = Path(__file__).parent.parent / 'main.py'
             python_exe = sys.executable
+            # Use pythonw.exe to avoid console window
+            if 'python.exe' in python_exe.lower():
+                python_exe = python_exe.lower().replace('python.exe', 'pythonw.exe')
             app_path = f'"{python_exe}" "{main_py}"'
         
         return app_path

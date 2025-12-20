@@ -11,6 +11,7 @@ import sys
 
 from config_manager import ConfigManager
 from tinxy_api import TinxyAPI
+from warning_dialog import WarningDialog
 
 class BreakGuardApp(QObject):
     """Main BreakGuard application with timer and system tray"""
@@ -31,6 +32,7 @@ class BreakGuardApp(QObject):
         self.time_remaining_seconds = 0
         self.is_paused = False
         self.is_locked = False
+        self.snooze_count = 0
         
         # Tinxy API (optional)
         if self.config.is_tinxy_enabled():
@@ -136,16 +138,48 @@ class BreakGuardApp(QObject):
     def _show_warning(self):
         """Show warning notification before lock"""
         warning_mins = self.config.get('warning_before_minutes', 5)
+        work_interval = self.config.get('work_interval_minutes', 60)
+        max_snooze = self.config.get('max_snooze_count', 1)
         
+        # Calculate work duration (approximate)
+        work_duration = work_interval - warning_mins
+        
+        # Show dialog
+        can_snooze = self.snooze_count < max_snooze
+        self.warning_dialog = WarningDialog(warning_mins, work_duration, can_snooze)
+        self.warning_dialog.snooze_requested.connect(self._on_snooze)
+        self.warning_dialog.show()
+        
+        # Also show tray notification as backup
         if self.tray_icon:
             self.tray_icon.showMessage(
                 "⚠️ Break Time Soon",
                 f"Break in {warning_mins} minutes - save your work!",
                 QSystemTrayIcon.MessageIcon.Warning,
-                5000  # 5 seconds
+                5000
             )
         
         self.warning_requested.emit(warning_mins)
+    
+    def _on_snooze(self):
+        """Handle snooze request"""
+        self.snooze_count += 1
+        
+        # Add 5 minutes to timer
+        self.time_remaining_seconds += (5 * 60)
+        
+        # Restart warning timer for next warning
+        warning_seconds = self.config.get_warning_time_seconds()
+        if self.time_remaining_seconds > warning_seconds:
+            warning_delay = (self.time_remaining_seconds - warning_seconds) * 1000
+            self.warning_timer.start(warning_delay)
+            
+        self.tray_icon.showMessage(
+            "💤 Snoozed",
+            "Break snoozed for 5 minutes.",
+            QSystemTrayIcon.MessageIcon.Information,
+            3000
+        )
     
     def _trigger_lock(self):
         """Trigger lock screen"""
@@ -181,6 +215,7 @@ class BreakGuardApp(QObject):
         """Start the work timer"""
         # Reset timer to full work interval
         self.time_remaining_seconds = self.config.get_work_interval_seconds()
+        self.snooze_count = 0
         
         # Schedule warning
         warning_seconds = self.config.get_warning_time_seconds()

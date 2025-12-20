@@ -230,7 +230,7 @@ class GoogleAuthPage(QWizardPage):
         inst_layout = QVBoxLayout(self.inst_frame)
         inst_layout.setSpacing(5)
         
-        inst_title = QLabel("✓ QR Code Generated!")
+        inst_title = QLabel("QR Code Generated!")
         inst_title.setMinimumHeight(25)
         inst_title.setStyleSheet("font-weight: bold; color: #00aa00; font-size: 14px;")
         inst_layout.addWidget(inst_title)

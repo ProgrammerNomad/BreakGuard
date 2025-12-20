@@ -8,11 +8,13 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread
 from PyQt6.QtGui import QFont, QImage, QPixmap
 import cv2
+import os
 from datetime import datetime
 
 from config_manager import ConfigManager
 from totp_auth import TOTPAuth
 from face_verification import FaceVerification
+from keyboard_blocker import KeyboardBlocker
 
 class CameraThread(QThread):
     """Thread for camera capture"""
@@ -58,13 +60,25 @@ class LockScreen(QWidget):
         self.config = config or ConfigManager()
         self.totp = TOTPAuth()
         self.face_verifier = FaceVerification()
+        self.keyboard_blocker = KeyboardBlocker()
         
         self.attempts_remaining = 5
         self.camera_thread = None
         self.current_frame = None
         
+        # Break duration
+        self.break_remaining_seconds = self.config.get('break_duration_minutes', 5) * 60
+        
         self._setup_ui()
         self._load_authentication()
+        
+        # Start blocking keyboard
+        self.keyboard_blocker.start()
+        
+        # Start Task Manager killer
+        self.tm_timer = QTimer()
+        self.tm_timer.timeout.connect(self._check_task_manager)
+        self.tm_timer.start(500)  # Check every 500ms
         
         # Block keyboard shortcuts
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
@@ -177,6 +191,15 @@ class LockScreen(QWidget):
         self.attempts_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.attempts_label.setStyleSheet("color: #ffa500;")
         layout.addWidget(self.attempts_label)
+        
+        layout.addSpacing(20)
+        
+        # Break duration timer
+        self.break_timer_label = QLabel(self._format_break_time())
+        self.break_timer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.break_timer_label.setFont(QFont("Segoe UI", 18))
+        self.break_timer_label.setStyleSheet("color: #ffffff;")
+        layout.addWidget(self.break_timer_label)
     
     def _create_totp_section(self) -> QFrame:
         """Create TOTP input section"""
@@ -360,9 +383,26 @@ class LockScreen(QWidget):
         self.camera_label.clear()
         self.camera_label.setText("Camera preview will appear here")
     
+    def _check_task_manager(self):
+        """Check if Task Manager is running and kill it"""
+        try:
+            # Use tasklist to check for Taskmgr.exe
+            import subprocess
+            
+            # Check if process exists
+            output = subprocess.check_output('tasklist /FI "IMAGENAME eq Taskmgr.exe"', shell=True)
+            if b"Taskmgr.exe" in output:
+                # Kill it
+                subprocess.call('taskkill /F /IM Taskmgr.exe', shell=True)
+                self._show_status("⚠️ Task Manager is blocked!", False)
+        except Exception:
+            pass
+
     def _unlock(self):
         """Unlock screen"""
         self._stop_camera()
+        self.keyboard_blocker.stop()
+        self.tm_timer.stop()
         self.unlocked.emit()
         self.close()
     
@@ -394,6 +434,20 @@ class LockScreen(QWidget):
     def _update_time(self):
         """Update current time display"""
         self.time_label.setText(datetime.now().strftime("%I:%M %p"))
+        
+        # Update break timer
+        if self.break_remaining_seconds > 0:
+            self.break_remaining_seconds -= 1
+            self.break_timer_label.setText(self._format_break_time())
+        else:
+            self.break_timer_label.setText("Break Complete - You may unlock now")
+            self.break_timer_label.setStyleSheet("color: #00ff00;")
+
+    def _format_break_time(self) -> str:
+        """Format break time remaining"""
+        minutes = self.break_remaining_seconds // 60
+        seconds = self.break_remaining_seconds % 60
+        return f"Break duration: {minutes}:{seconds:02d} remaining"
     
     def _load_authentication(self):
         """Load TOTP and face verification data"""
@@ -419,4 +473,7 @@ class LockScreen(QWidget):
     def closeEvent(self, event):
         """Handle close event"""
         self._stop_camera()
+        self.keyboard_blocker.stop()
+        if hasattr(self, 'tm_timer'):
+            self.tm_timer.stop()
         super().closeEvent(event)
