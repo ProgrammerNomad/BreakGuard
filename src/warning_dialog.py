@@ -26,7 +26,7 @@ class WarningDialog(QDialog):
         
         self.setWindowTitle("Break Time Approaching")
         self.setWindowFlags(Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.FramelessWindowHint)
-        self.setFixedSize(400, 250)
+        self.setFixedSize(400, 350)
         
         # Styling
         self.setStyleSheet("""
@@ -78,8 +78,22 @@ class WarningDialog(QDialog):
         
         # Info
         info_frame = QFrame()
-        info_frame.setStyleSheet("background-color: rgba(255, 255, 255, 0.5); border-radius: 5px; padding: 10px;")
+        info_frame.setStyleSheet("""
+            QFrame {
+                background-color: rgba(255, 255, 255, 0.5);
+                border-radius: 5px;
+            }
+            QLabel {
+                color: #856404;
+                background-color: transparent;
+                border: none;
+                font-family: "Segoe UI";
+                font-size: 14px;
+            }
+        """)
         info_layout = QVBoxLayout(info_frame)
+        info_layout.setContentsMargins(10, 10, 10, 10)
+        info_layout.setSpacing(5)
         
         next_break = datetime.now() + timedelta(minutes=minutes_remaining)
         

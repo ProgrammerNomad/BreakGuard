@@ -195,7 +195,7 @@ class BreakGuardApp(QObject):
         from lock_screen_pyqt import LockScreen
         self.lock_screen = LockScreen(self.config)
         self.lock_screen.unlocked.connect(self._on_unlock)
-        self.lock_screen.show()
+        self.lock_screen.showFullScreen()
         
         self.lock_requested.emit()
     

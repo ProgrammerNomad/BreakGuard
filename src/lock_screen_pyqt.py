@@ -88,10 +88,8 @@ class LockScreen(QWidget):
         # Make fullscreen and always on top
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint |
-            Qt.WindowType.WindowStaysOnTopHint |
-            Qt.WindowType.Tool
+            Qt.WindowType.WindowStaysOnTopHint
         )
-        self.setWindowState(Qt.WindowState.WindowFullScreen)
         
         # Set dark background
         self.setStyleSheet("""
