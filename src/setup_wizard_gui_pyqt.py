@@ -6,9 +6,10 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import (QWizard, QWizardPage, QVBoxLayout, QHBoxLayout,
                              QLabel, QPushButton, QLineEdit, QSpinBox, QCheckBox,
-                             QComboBox, QFrame, QProgressBar, QTextEdit, QApplication)
+                             QComboBox, QFrame, QProgressBar, QTextEdit, QApplication,
+                             QGraphicsDropShadowEffect, QGridLayout)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread
-from PyQt6.QtGui import QFont, QPixmap, QImage, QKeyEvent, QKeySequence
+from PyQt6.QtGui import QFont, QPixmap, QImage, QKeyEvent, QKeySequence, QColor
 from PyQt6.QtMultimedia import QMediaDevices
 import cv2
 import numpy as np
@@ -97,13 +98,16 @@ class WelcomePage(QWizardPage):
     
     def __init__(self):
         super().__init__()
-        self.setTitle("Welcome to BreakGuard")
-        self.setSubTitle("Your personal health guardian")
+        # Clear default header to implement custom design
+        self.setTitle("")
+        self.setSubTitle("")
         
         layout = QVBoxLayout()
-        layout.setSpacing(20)
+        layout.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
+        layout.setSpacing(10)
+        layout.setContentsMargins(40, 40, 40, 40)
         
-        # Icon/Logo
+        # Logo
         logo_label = QLabel()
         logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
@@ -113,61 +117,91 @@ class WelcomePage(QWizardPage):
         
         if logo_path.exists():
             pixmap = QPixmap(str(logo_path))
-            scaled_pixmap = pixmap.scaled(128, 128, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            scaled_pixmap = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            
+            # Add subtle soft shadow/glow
+            shadow = QGraphicsDropShadowEffect()
+            shadow.setBlurRadius(20)
+            shadow.setColor(QColor(0, 0, 0, 40))
+            shadow.setOffset(0, 4)
+            logo_label.setGraphicsEffect(shadow)
+            
             logo_label.setPixmap(scaled_pixmap)
         else:
             logo_label.setText("🛡️")
-            title_font = QFont("Segoe UI", 72)
+            title_font = QFont("Segoe UI", 80)
             logo_label.setFont(title_font)
             
         layout.addWidget(logo_label)
+        layout.addSpacing(20)
         
-        # Welcome message
-        welcome = QLabel("Welcome to BreakGuard")
-        welcome.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        welcome_font = QFont("Segoe UI", 24, QFont.Weight.Bold)
-        welcome.setFont(welcome_font)
-        welcome.setAccessibleName("Welcome to BreakGuard")
-        welcome.setAccessibleDescription("Welcome screen for the BreakGuard setup wizard")
-        layout.addWidget(welcome)
+        # Header
+        title = QLabel("Welcome to BreakGuard")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_font = QFont("Segoe UI", 26, QFont.Weight.Bold)
+        title.setFont(title_font)
+        title.setStyleSheet("color: #2c3e50;") 
+        layout.addWidget(title)
         
-        subtitle = QLabel("Your personal break reminder assistant")
+        subtitle = QLabel("Your personal health guardian")
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        subtitle.setProperty("class", "subtitle")
-        subtitle.setAccessibleName("Subtitle")
-        subtitle.setAccessibleDescription("Your personal break reminder assistant")
+        subtitle_font = QFont("Segoe UI", 13)
+        subtitle.setFont(subtitle_font)
+        subtitle.setStyleSheet("color: #7f8c8d;")
         layout.addWidget(subtitle)
         
-        layout.addSpacing(20)
+        layout.addSpacing(30)
         
-        # Features
-        features_label = QLabel("Features:")
-        features_label.setProperty("class", "h2")
-        features_label.setAccessibleName("Features list")
-        layout.addWidget(features_label)
+        # Description
+        desc = QLabel("BreakGuard helps you build healthy work habits by enforcing regular breaks.")
+        desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        desc.setWordWrap(True)
+        desc_font = QFont("Segoe UI", 11)
+        desc.setFont(desc_font)
+        desc.setStyleSheet("color: #34495e;")
+        layout.addWidget(desc)
+        
+        layout.addSpacing(30)
+        
+        # Features Section
+        features_frame = QFrame()
+        features_layout = QGridLayout(features_frame)
+        features_layout.setVerticalSpacing(15)
+        features_layout.setHorizontalSpacing(15)
+        features_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         features = [
-            "⏰ Smart work interval tracking",
-            "🔒 Secure two-factor authentication",
-            "👤 Optional face verification",
-            "🔌 IoT device integration",
-            "🚀 Auto-start with Windows"
+            ("⏱️", "Smart work intervals"),
+            ("🔐", "Two-factor protection"),
+            ("👤", "Optional face verification"),
+            ("🔌", "IoT device control"),
+            ("🚀", "Auto-start with Windows")
         ]
         
-        for feature in features:
-            label = QLabel(feature)
-            label.setProperty("class", "feature-item")
-            label.setAccessibleName(feature)
-            layout.addWidget(label)
-        
-        layout.addSpacing(20)
-        
-        info = QLabel("This wizard will guide you through setup.\nYou can change settings later from the system tray.")
-        info.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        info.setProperty("class", "subtitle")
-        layout.addWidget(info)
+        for row, (icon, text) in enumerate(features):
+            icon_label = QLabel(icon)
+            icon_label.setFont(QFont("Segoe UI", 12))
+            icon_label.setStyleSheet("color: #555;")
+            icon_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            
+            text_label = QLabel(text)
+            text_label.setFont(QFont("Segoe UI", 11))
+            text_label.setStyleSheet("color: #333;")
+            text_label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+            
+            features_layout.addWidget(icon_label, row, 0)
+            features_layout.addWidget(text_label, row, 1)
+            
+        layout.addWidget(features_frame)
         
         layout.addStretch()
+        
+        # Footer
+        footer = QLabel("This setup wizard will guide you through the initial configuration.")
+        footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        footer.setStyleSheet("color: #95a5a6; font-size: 11px;")
+        layout.addWidget(footer)
+        
         self.setLayout(layout)
 
 class WorkIntervalsPage(QWizardPage):
