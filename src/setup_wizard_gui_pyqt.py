@@ -263,7 +263,7 @@ class WorkIntervalsPage(QWizardPage):
         work_section.addWidget(work_label)
         
         self.work_spin = QSpinBox()
-        self.work_spin.setRange(15, 240)
+        self.work_spin.setRange(1, 240)
         self.work_spin.setValue(60)
         self.work_spin.setSuffix(" minutes")
         self.work_spin.setFixedHeight(35)

@@ -130,12 +130,12 @@ class SettingsWindow(QWidget):
         work_label = QLabel("Work interval:")
         work_label.setMinimumWidth(150)
         self.work_spin = QSpinBox()
-        self.work_spin.setRange(15, 240)
+        self.work_spin.setRange(1, 240)
         self.work_spin.setSuffix(" minutes")
         self.work_spin.setAccessibleName("Work interval in minutes")
-        self.work_spin.setAccessibleDescription("Set the length of work sessions before a break is required, between 15 and 240 minutes")
-        self.work_spin.setToolTip("Set the duration of work sessions (15-240 minutes)")
-        self.work_spin.valueChanged.connect(lambda v: self._validate_spinbox(self.work_spin, v, 15, 240, "Work interval"))
+        self.work_spin.setAccessibleDescription("Set the length of work sessions before a break is required, between 1 and 240 minutes")
+        self.work_spin.setToolTip("Set the duration of work sessions (1-240 minutes)")
+        self.work_spin.valueChanged.connect(lambda v: self._validate_spinbox(self.work_spin, v, 1, 240, "Work interval"))
         self.work_validation_label = QLabel("")
         self.work_validation_label.setProperty("class", "validation-msg")
         work_layout.addWidget(work_label)
@@ -196,6 +196,12 @@ class SettingsWindow(QWidget):
         self.auto_start_check.setAccessibleDescription("When enabled, BreakGuard will automatically launch whenever you start your computer")
         self.auto_start_check.setToolTip("Automatically start BreakGuard when Windows starts")
         startup_layout.addWidget(self.auto_start_check)
+        
+        self.auto_unlock_check = QCheckBox("Auto-unlock after break complete")
+        self.auto_unlock_check.setAccessibleName("Auto-unlock checkbox")
+        self.auto_unlock_check.setAccessibleDescription("When enabled, the lock screen will automatically close when the break timer finishes")
+        self.auto_unlock_check.setToolTip("Automatically unlock screen when break time is over")
+        startup_layout.addWidget(self.auto_unlock_check)
         
         startup_group.setLayout(startup_layout)
         layout.addWidget(startup_group)
@@ -427,6 +433,7 @@ class SettingsWindow(QWidget):
         self.break_spin.setValue(self.config.get('break_duration_minutes', 10))
         
         self.auto_start_check.setChecked(self.config.get('auto_start_windows', True))
+        self.auto_unlock_check.setChecked(self.config.get('auto_unlock_after_break', False))
         
         self.totp_check.setChecked(self.config.get('totp_enabled', True))
         self.face_check.setChecked(self.config.get('face_verification_enabled', True))
@@ -446,6 +453,7 @@ class SettingsWindow(QWidget):
         self.config.set('break_duration_minutes', self.break_spin.value())
         
         self.config.set('auto_start_windows', self.auto_start_check.isChecked())
+        self.config.set('auto_unlock_after_break', self.auto_unlock_check.isChecked())
         
         self.config.set('totp_enabled', self.totp_check.isChecked())
         self.config.set('face_verification_enabled', self.face_check.isChecked())

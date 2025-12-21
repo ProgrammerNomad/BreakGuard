@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QPushButton, QLineEdit, QFrame, QApplication,
                              QTabWidget, QSizePolicy)
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QThread, QPropertyAnimation, QSequentialAnimationGroup, QPoint
-from PyQt6.QtGui import QFont, QImage, QPixmap, QKeyEvent
+from PyQt6.QtGui import QFont, QImage, QPixmap, QKeyEvent, QKeySequence
 import cv2
 import os
 import logging
@@ -65,8 +65,19 @@ class LockScreen(QWidget):
         
         self.config = config or ConfigManager()
         self.totp = TOTPAuth()
-        self.face_verifier = FaceVerification()
-        self.keyboard_blocker = KeyboardBlocker()
+        
+        # Initialize components with error handling
+        try:
+            self.face_verifier = FaceVerification()
+        except Exception as e:
+            logger.error(f"Failed to initialize FaceVerification: {e}")
+            self.face_verifier = None
+            
+        try:
+            self.keyboard_blocker = KeyboardBlocker()
+        except Exception as e:
+            logger.error(f"Failed to initialize KeyboardBlocker: {e}")
+            self.keyboard_blocker = None
         
         self.attempts_remaining = 5
         self.lockout_count = 0  # Track number of lockouts for exponential backoff
@@ -80,7 +91,11 @@ class LockScreen(QWidget):
         self._load_authentication()
         
         # Start blocking keyboard
-        self.keyboard_blocker.start()
+        if self.keyboard_blocker:
+            try:
+                self.keyboard_blocker.start()
+            except Exception as e:
+                logger.error(f"Failed to start KeyboardBlocker: {e}")
         
         # Start Task Manager killer
         self.tm_timer = QTimer()
@@ -174,7 +189,7 @@ class LockScreen(QWidget):
             self.auth_tabs.addTab(totp_frame, "🔐 Authenticator Code")
             
         # Face Verification Tab
-        if self.config.is_face_verification_enabled():
+        if self.config.is_face_verification_enabled() and self.face_verifier:
             face_frame = self._create_face_section()
             face_frame.setStyleSheet("background-color: transparent;")
             self.auth_tabs.addTab(face_frame, "👤 Face Verification")
@@ -343,7 +358,7 @@ class LockScreen(QWidget):
     def eventFilter(self, obj, event):
         """Event filter for paste support"""
         if event.type() == QKeyEvent.Type.KeyPress:
-            if event.matches(QKeyEvent.StandardKey.Paste):
+            if event.matches(QKeySequence.StandardKey.Paste):
                 # Handle paste event
                 clipboard = QApplication.clipboard()
                 text = clipboard.text().strip()
@@ -580,8 +595,11 @@ class LockScreen(QWidget):
         """Unlock screen"""
         self._show_loading(False)  # Stop loading animation
         self._stop_camera()
-        self.keyboard_blocker.stop()
+        if self.keyboard_blocker:
+            self.keyboard_blocker.stop()
         self.tm_timer.stop()
+        if hasattr(self, 'time_timer'):
+            self.time_timer.stop()
         self.unlocked.emit()
         self.close()
     
@@ -675,6 +693,11 @@ class LockScreen(QWidget):
             self.break_remaining_seconds -= 1
             self.break_timer_label.setText(self._format_break_time())
         else:
+            # Check for auto-unlock
+            if self.config.get('auto_unlock_after_break', False):
+                self._unlock()
+                return
+                
             self.break_timer_label.setText("Break Complete - You may unlock now")
             self.break_timer_label.setStyleSheet("color: #00ff00;")
 
@@ -687,7 +710,8 @@ class LockScreen(QWidget):
     def _load_authentication(self) -> None:
         """Load TOTP and face verification data"""
         self.totp.load_secret()
-        self.face_verifier.load_registered_faces()
+        if self.face_verifier:
+            self.face_verifier.load_registered_faces()
     
     def keyPressEvent(self, event):
         """Block certain keyboard shortcuts"""
@@ -706,7 +730,8 @@ class LockScreen(QWidget):
     def closeEvent(self, event):
         """Handle close event"""
         self._stop_camera()
-        self.keyboard_blocker.stop()
+        if self.keyboard_blocker:
+            self.keyboard_blocker.stop()
         if hasattr(self, 'tm_timer'):
             self.tm_timer.stop()
         super().closeEvent(event)

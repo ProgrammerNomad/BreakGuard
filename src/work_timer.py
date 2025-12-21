@@ -4,9 +4,9 @@ Main application logic for tracking work time and showing lock screen
 """
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
+from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QLineEdit
 from PyQt6.QtCore import QTimer, Qt, pyqtSignal, QObject
-from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtGui import QIcon, QAction, QPainter, QColor
 from pathlib import Path
 import sys
 import logging
@@ -34,8 +34,11 @@ class BreakGuardApp(QObject):
         self.state_manager = StateManager(auto_persist=True)
         self.tray_icon = None
         self.debug_window = None
+        self.warning_dialog = None  # Initialize warning_dialog
         self.work_timer = QTimer()
         self.warning_timer = QTimer()
+        self.icon_blink_timer = QTimer()
+        self.icon_blink_state = False
         
         self.time_remaining_seconds = 0
         self.is_paused = False
@@ -76,6 +79,9 @@ class BreakGuardApp(QObject):
         # Warning timer fires once
         self.warning_timer.timeout.connect(self._show_warning)
         self.warning_timer.setSingleShot(True)
+        
+        # Icon blink timer
+        self.icon_blink_timer.timeout.connect(self._blink_icon)
     
     def _setup_tray_icon(self) -> None:
         """Create system tray icon and menu"""
@@ -161,72 +167,104 @@ class BreakGuardApp(QObject):
         if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
             self.show_status()
     
+    def _ensure_timers(self) -> None:
+        """Ensure all timers exist"""
+        if not hasattr(self, 'work_timer'):
+            self.work_timer = QTimer()
+            self.work_timer.timeout.connect(self._on_timer_tick)
+            self.work_timer.setInterval(1000)
+            
+        if not hasattr(self, 'warning_timer'):
+            self.warning_timer = QTimer()
+            self.warning_timer.timeout.connect(self._show_warning)
+            self.warning_timer.setSingleShot(True)
+            
+        if not hasattr(self, 'icon_blink_timer'):
+            self.icon_blink_timer = QTimer()
+            self.icon_blink_timer.timeout.connect(self._blink_icon)
+
     def _on_timer_tick(self) -> None:
         """Called every second while timer is running"""
-        if self.is_paused or self.is_locked:
-            return
-        
-        self.time_remaining_seconds -= 1
-        
-        # Persist time remaining every 10 seconds
-        if self.time_remaining_seconds % 10 == 0:
-            self.state_manager.set_data('time_remaining_seconds', self.time_remaining_seconds)
-            self.state_manager.set_data('snooze_count', self.snooze_count)
-        
-        # Update tray tooltip
-        minutes = self.time_remaining_seconds // 60
-        seconds = self.time_remaining_seconds % 60
-        self.tray_icon.setToolTip(
-            f"BreakGuard - {minutes}:{seconds:02d} remaining"
-        )
-        
-        # Update status action
-        self.status_action.setText(
-            f"🟢 Active ({minutes} min remaining)"
-        )
-        
-        # Check if time's up
-        if self.time_remaining_seconds <= 0:
-            self._trigger_lock()
+        try:
+            self._ensure_timers()
+            
+            if self.is_paused or self.is_locked:
+                return
+            
+            self.time_remaining_seconds -= 1
+            
+            # Persist time remaining every 10 seconds
+            if self.time_remaining_seconds % 10 == 0:
+                self.state_manager.set_data('time_remaining_seconds', self.time_remaining_seconds)
+                self.state_manager.set_data('snooze_count', self.snooze_count)
+            
+            # Update tray tooltip
+            minutes = self.time_remaining_seconds // 60
+            seconds = self.time_remaining_seconds % 60
+            if self.tray_icon:
+                self.tray_icon.setToolTip(
+                    f"BreakGuard - {minutes}:{seconds:02d} remaining"
+                )
+            
+            # Update status action
+            if hasattr(self, 'status_action'):
+                self.status_action.setText(
+                    f"🟢 Active ({minutes} min remaining)"
+                )
+            
+            # Check if time's up
+            if self.time_remaining_seconds <= 0:
+                self._trigger_lock()
+        except Exception as e:
+            logger.error(f"Error in timer tick: {e}", exc_info=True)
     
     def _show_warning(self) -> None:
         """Show warning notification before lock"""
-        if not self.state_manager.is_state(AppState.WARNING):
-            self.state_manager.transition_to(AppState.WARNING)
-        
-        warning_mins = self.config.get('warning_before_minutes', 5)
-        work_interval = self.config.get('work_interval_minutes', 60)
-        max_snooze = self.config.get('max_snooze_count', 1)
-        
-        # Calculate work duration (approximate)
-        work_duration = work_interval - warning_mins
-        
-        # Show dialog
-        can_snooze = self.snooze_count < max_snooze
-        self.warning_dialog = WarningDialog(warning_mins, work_duration, can_snooze)
-        self.warning_dialog.snooze_requested.connect(self._on_snooze)
-        self.warning_dialog.show()
-        
-        # Start tray icon animation
-        self.icon_blink_timer.start(500)  # Blink every 500ms
-        
-        # Also show tray notification as backup
-        if self.tray_icon:
-            self.tray_icon.showMessage(
-                "⚠️ Break Time Soon",
-                f"Break in {warning_mins} minutes - save your work!",
-                QSystemTrayIcon.MessageIcon.Warning,
-                5000
-            )
-        
-        self.warning_requested.emit(warning_mins)
+        try:
+            # If we are already in warning state, don't show again unless it's a new cycle
+            if self.state_manager.is_state(AppState.WARNING) and self.warning_dialog and self.warning_dialog.isVisible():
+                return
+
+            if not self.state_manager.is_state(AppState.WARNING):
+                self.state_manager.transition_to(AppState.WARNING)
+            
+            warning_mins = self.config.get('warning_before_minutes', 5)
+            work_interval = self.config.get('work_interval_minutes', 60)
+            max_snooze = self.config.get('max_snooze_count', 1)
+            
+            # Calculate work duration (approximate)
+            work_duration = max(0, work_interval - warning_mins)
+            
+            # Show dialog
+            can_snooze = self.snooze_count < max_snooze
+            self.warning_dialog = WarningDialog(warning_mins, work_duration, can_snooze)
+            self.warning_dialog.snooze_requested.connect(self._on_snooze)
+            self.warning_dialog.show()
+            
+            # Also show tray notification as backup
+            if self.tray_icon:
+                self.tray_icon.showMessage(
+                    "⚠️ Break Time Soon",
+                    f"Break in {warning_mins} minutes - save your work!",
+                    QSystemTrayIcon.MessageIcon.Warning,
+                    5000
+                )
+            
+            # Start icon blinking
+            if hasattr(self, 'icon_blink_timer'):
+                self.icon_blink_timer.start(500)  # Blink every 500ms
+            
+            self.warning_requested.emit(warning_mins)
+        except Exception as e:
+            logger.error(f"Error showing warning: {e}", exc_info=True)
     
     def _on_snooze(self) -> None:
         """Handle snooze request"""
         self.snooze_count += 1
         
         # Stop icon blinking
-        self.icon_blink_timer.stop()
+        if hasattr(self, 'icon_blink_timer'):
+            self.icon_blink_timer.stop()
         self._restore_normal_icon()
         
         # Add 5 minutes to timer
@@ -238,6 +276,14 @@ class BreakGuardApp(QObject):
             warning_delay = (self.time_remaining_seconds - warning_seconds) * 1000
             self.warning_timer.start(warning_delay)
             
+            # Transition back to WORKING state
+            if not self.state_manager.is_state(AppState.WORKING):
+                self.state_manager.transition_to(AppState.WORKING)
+        else:
+            # If snoozed time is still within warning period, restart warning timer immediately
+            # But don't show warning dialog again immediately
+            pass
+            
         self.tray_icon.showMessage(
             "💤 Snoozed",
             "Break snoozed for 5 minutes.",
@@ -248,10 +294,12 @@ class BreakGuardApp(QObject):
     def _trigger_lock(self) -> None:
         """Trigger lock screen"""
         self.is_locked = True
-        self.work_timer.stop()
+        if hasattr(self, 'work_timer'):
+            self.work_timer.stop()
         
         # Stop icon blinking
-        self.icon_blink_timer.stop()
+        if hasattr(self, 'icon_blink_timer'):
+            self.icon_blink_timer.stop()
         self._restore_normal_icon()
         
         # Transition to LOCKED state
@@ -298,6 +346,11 @@ class BreakGuardApp(QObject):
             overlay.close()
         self.overlays.clear()
         
+        # Clean up lock screen reference
+        if hasattr(self, 'lock_screen') and self.lock_screen:
+            self.lock_screen.close()
+            self.lock_screen = None
+        
         # Turn monitor back on via Tinxy if enabled
         if self.tinxy and self.config.is_tinxy_enabled():
             device_num = self.config.get('tinxy_device_number', 1)
@@ -308,34 +361,44 @@ class BreakGuardApp(QObject):
     
     def start(self) -> None:
         """Start the work timer"""
-        # Reset timer to full work interval
-        self.time_remaining_seconds = self.config.get_work_interval_seconds()
-        self.snooze_count = 0
-        
-        # Transition to WORKING state (only if not already working)
-        if not self.state_manager.is_state(AppState.WORKING):
-            self.state_manager.transition_to(AppState.WORKING)
-        self.state_manager.set_data('time_remaining_seconds', self.time_remaining_seconds)
-        self.state_manager.set_data('snooze_count', self.snooze_count)
-        
-        # Schedule warning
-        warning_seconds = self.config.get_warning_time_seconds()
-        if warning_seconds > 0 and warning_seconds < self.time_remaining_seconds:
-            warning_delay = (self.time_remaining_seconds - warning_seconds) * 1000
-            self.warning_timer.start(warning_delay)
-        
-        # Start work timer
-        self.is_paused = False
-        self.work_timer.start()
-        
-        # Update tray
-        self.status_action.setText("🟢 Active")
-        self.tray_icon.showMessage(
-            "BreakGuard Started",
-            f"Work timer started. Break in {self.time_remaining_seconds // 60} minutes.",
-            QSystemTrayIcon.MessageIcon.Information,
-            3000
-        )
+        try:
+            # Reset timer to full work interval
+            self.time_remaining_seconds = self.config.get_work_interval_seconds()
+            self.snooze_count = 0
+            
+            # Transition to WORKING state (only if not already working)
+            if not self.state_manager.is_state(AppState.WORKING):
+                self.state_manager.transition_to(AppState.WORKING)
+            self.state_manager.set_data('time_remaining_seconds', self.time_remaining_seconds)
+            self.state_manager.set_data('snooze_count', self.snooze_count)
+            
+            # Schedule warning
+            warning_seconds = self.config.get_warning_time_seconds()
+            if warning_seconds > 0:
+                if warning_seconds < self.time_remaining_seconds:
+                    warning_delay = (self.time_remaining_seconds - warning_seconds) * 1000
+                    self.warning_timer.start(warning_delay)
+                else:
+                    # We are already in warning period (e.g. short work interval)
+                    # Show warning immediately
+                    self.warning_timer.start(1000)
+            
+            # Start work timer
+            self.is_paused = False
+            self.work_timer.start()
+            
+            # Update tray
+            if hasattr(self, 'status_action'):
+                self.status_action.setText("🟢 Active")
+            if self.tray_icon:
+                self.tray_icon.showMessage(
+                    "BreakGuard Started",
+                    f"Work timer started. Break in {self.time_remaining_seconds // 60} minutes.",
+                    QSystemTrayIcon.MessageIcon.Information,
+                    3000
+                )
+        except Exception as e:
+            logger.error(f"Error starting timer: {e}", exc_info=True)
     
     def toggle_pause(self) -> None:
         """Pause or resume timer"""
@@ -542,9 +605,12 @@ class BreakGuardApp(QObject):
     
     def exit_app(self) -> None:
         """Exit the application"""
-        self.work_timer.stop()
-        self.warning_timer.stop()
-        self.icon_blink_timer.stop()
+        if hasattr(self, 'work_timer'):
+            self.work_timer.stop()
+        if hasattr(self, 'warning_timer'):
+            self.warning_timer.stop()
+        if hasattr(self, 'icon_blink_timer'):
+            self.icon_blink_timer.stop()
         
         if self.tray_icon:
             self.tray_icon.hide()

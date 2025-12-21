@@ -20,7 +20,7 @@ class ConfigManager:
     
     # Validation rules for configuration values
     VALIDATION_RULES = {
-        'work_interval_minutes': {'min': 15, 'max': 240, 'type': int},
+        'work_interval_minutes': {'min': 1, 'max': 240, 'type': int},
         'warning_before_minutes': {'min': 1, 'max': 30, 'type': int},
         'break_duration_minutes': {'min': 1, 'max': 60, 'type': int},
         'snooze_limit': {'min': 0, 'max': 10, 'type': int},
@@ -40,6 +40,7 @@ class ConfigManager:
         "tinxy_device_id": "",
         "tinxy_device_number": 1,
         "auto_start_windows": True,
+        "auto_unlock_after_break": False,
         "max_snooze_count": 1,
         "setup_completed": False
     }

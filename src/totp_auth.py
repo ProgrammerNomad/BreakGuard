@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 # Try to import Windows DPAPI
 try:
     import win32crypt
+    import pywintypes
     DPAPI_AVAILABLE = True
 except ImportError:
     DPAPI_AVAILABLE = False
@@ -159,7 +160,10 @@ class TOTPAuth:
             logger.info(f"TOTP secret loaded using {'DPAPI' if self.use_dpapi else 'Fernet'}")
             return self._secret
         except Exception as e:
-            logger.error(f"Error loading secret: {e}", exc_info=True)
+            if self.use_dpapi and isinstance(e, pywintypes.error) and e.args[0] == 13:
+                logger.error("TOTP secret file is corrupted or from another machine/user. Please delete 'data/totp_secret.enc' and run setup again.")
+            else:
+                logger.error(f"Error loading secret: {e}", exc_info=True)
             return None
     
     def generate_qr_code(self, secret: str = None, name: str = "BreakGuard", issuer: str = "BreakGuard") -> Image.Image:

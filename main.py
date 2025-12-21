@@ -51,11 +51,20 @@ def setup_logging():
     root_logger.addHandler(file_handler)
     root_logger.addHandler(console_handler)
     
+    # Silence comtypes debug logs
+    logging.getLogger('comtypes').setLevel(logging.INFO)
+    
     logging.info("Logging initialized")
+
+def global_exception_handler(exctype, value, traceback):
+    """Global exception handler to log unhandled exceptions"""
+    logging.critical("Unhandled exception", exc_info=(exctype, value, traceback))
+    sys.__excepthook__(exctype, value, traceback)
 
 def main():
     """Main entry point"""
     setup_logging()
+    sys.excepthook = global_exception_handler
     logger = logging.getLogger(__name__)
     
     parser = argparse.ArgumentParser(description='BreakGuard - Your Health Guardian')
@@ -81,18 +90,21 @@ def main():
         import ctypes
         myappid = 'BreakGuard' # Changed to simple name
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-        
-        # Ensure Start Menu shortcut exists for notifications to have icon
-        try:
-            from windows_startup import WindowsStartup
-            startup = WindowsStartup()
-            startup.create_shortcut()
-        except Exception:
-            pass
 
     app = QApplication(sys.argv)
     app.setApplicationName("BreakGuard")
     app.setOrganizationName("BreakGuard")
+    
+    # Ensure Start Menu shortcut exists (run after app init to avoid COM conflicts)
+    if sys.platform == 'win32':
+        try:
+            logger.debug("Creating Start Menu shortcut...")
+            from windows_startup import WindowsStartup
+            startup = WindowsStartup()
+            startup.create_shortcut()
+            logger.debug("Shortcut created successfully")
+        except Exception as e:
+            logger.error(f"Failed to create shortcut: {e}", exc_info=True)
     
     # Apply global theme
     app.setStyleSheet(load_stylesheet())
@@ -142,7 +154,11 @@ def main():
         # Run main application
         start_app()
     
-    sys.exit(app.exec())
+    try:
+        sys.exit(app.exec())
+    except Exception as e:
+        logger.critical(f"Application crashed: {e}", exc_info=True)
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
