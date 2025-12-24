@@ -322,11 +322,13 @@ All settings are stored in `config.json`:
 
 ```
 BreakGuard
-  ├─ Status: Active (42 mins remaining)
+  ├─ Active (18 min remaining)
+  ├─ Quick Settings
   ├─ Pause Timer
   ├─ Settings
+  ├─ Debug Info
   ├─ Run Setup Again
-  ├─ View Logs
+  ├─ Skip Current Break
   └─ Exit BreakGuard
 ```
 
