@@ -8,8 +8,8 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QPushButton, QSpinBox, QCheckBox, QLineEdit,
                              QGroupBox, QTabWidget, QMessageBox, QApplication,
                              QFileDialog, QScrollArea)
-from PyQt6.QtCore import Qt, pyqtSignal, QPropertyAnimation, QEasingCurve
-from PyQt6.QtGui import QFont
+from PyQt6.QtCore import Qt, pyqtSignal, QPropertyAnimation, QEasingCurve, QUrl
+from PyQt6.QtGui import QFont, QDesktopServices
 
 from config_manager import ConfigManager
 from tinxy_api import TinxyAPI
@@ -62,6 +62,10 @@ class SettingsWindow(QWidget):
         tabs.addTab(security_scroll, "Security")
         tabs.addTab(tinxy_scroll, "Tinxy IoT")
         tabs.addTab(advanced_scroll, "Advanced")
+        
+        # About Tab
+        about_scroll = self._create_scrollable_tab(self._create_about_tab())
+        tabs.addTab(about_scroll, "About")
         
         layout.addWidget(tabs)
         
@@ -604,6 +608,60 @@ class SettingsWindow(QWidget):
             face.clear_registered_faces()
             QMessageBox.information(self, "Info", "Face data cleared. Run setup again.")
     
+    def _create_about_tab(self) -> QWidget:
+        """Create about tab"""
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+        layout.setSpacing(20)
+        
+        # Logo/Title
+        title_label = QLabel("🛡️ BreakGuard")
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label.setStyleSheet("font-size: 24px; font-weight: bold; margin-top: 20px;")
+        layout.addWidget(title_label)
+        
+        version_label = QLabel("Version 1.0.0")
+        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        version_label.setStyleSheet("color: #888;")
+        layout.addWidget(version_label)
+        
+        # Description
+        desc_label = QLabel(
+            "BreakGuard is an open-source tool designed to enforce healthy work breaks.\n"
+            "It helps you maintain discipline and protect your health during long coding sessions."
+        )
+        desc_label.setWordWrap(True)
+        desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        desc_label.setStyleSheet("margin: 10px 20px;")
+        layout.addWidget(desc_label)
+        
+        # Links Group
+        links_group = QGroupBox("Project Information")
+        links_layout = QVBoxLayout()
+        links_layout.setSpacing(10)
+        
+        # Repository Link
+        repo_btn = QPushButton("View on GitHub")
+        repo_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        repo_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/ProgrammerNomad/BreakGuard")))
+        links_layout.addWidget(repo_btn)
+        
+        # License Info
+        license_label = QLabel("License: MIT License (Open Source)")
+        license_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        links_layout.addWidget(license_label)
+        
+        # Author Info
+        author_label = QLabel("Created by: ProgrammerNomad")
+        author_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        links_layout.addWidget(author_label)
+        
+        links_group.setLayout(links_layout)
+        layout.addWidget(links_group)
+        
+        layout.addStretch()
+        return tab
+
     def _reset_all(self):
         """Reset everything"""
         reply = QMessageBox.critical(

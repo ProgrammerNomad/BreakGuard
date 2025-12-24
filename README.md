@@ -1,33 +1,30 @@
-# 🛡️ BreakGuard - Your Health Guardian
+# BreakGuard - Your Health Guardian
 
 **Enforce healthy work breaks with unbreakable discipline.**
 
 BreakGuard is a Windows application that forces you to take regular breaks during long working hours. It locks your screen, controls your monitor via IoT, and requires secure two-factor authentication to unlock — making it impossible to skip breaks.
 
 Perfect for developers, designers, remote workers, and anyone who works 10+ hours continuously and struggles with self-discipline.
-
-**Repository:** [https://github.com/ProgrammerNomad/BreakGuard](https://github.com/ProgrammerNomad/BreakGuard)
-
 ---
 
-## 🎯 Why BreakGuard?
+## Why BreakGuard?
 
 **The Problem:** You know breaks are important, but willpower fails when deadlines loom. Notifications get dismissed. Timers get ignored. Your health suffers.
 
 **The Solution:** BreakGuard doesn't ask — it enforces.
 
-### ✨ Key Features
+### Key Features
 
-- 🎨 **Beautiful Modern UI** - PyQt6 interface with Material Design
-- ⏱️ **Automatic Lock** - Screen locks after your configured work interval
-- 🔐 **Two-Factor Unlock** - Google Authenticator (6-digit OTP) + Face verification
-- 🖥️ **Monitor Control** - Turns off monitor via Tinxy IoT API
-- 🔄 **Survives Reboots** - Auto-starts with Windows, enforces breaks even after restart
-- 🚫 **Anti-Bypass** - Blocks Alt+Tab, Alt+F4, Task Manager during lock
-- 🧠 **Builds Habits** - Consistent enforcement creates lasting behavior change
-- 📊 **Configurable** - Set your own work/break intervals
+- **Beautiful Modern UI** - PyQt6 interface with Material Design
+- **Automatic Lock** - Screen locks after your configured work interval
+- **Two-Factor Unlock** - Google Authenticator (6-digit OTP) + Face verification
+- **Monitor Control** - Turns off monitor via Tinxy IoT API
+- **Survives Reboots** - Auto-starts with Windows, enforces breaks even after restart
+- **Anti-Bypass** - Blocks Alt+Tab, Alt+F4, Task Manager during lock
+- **Builds Habits** - Consistent enforcement creates lasting behavior change
+- **Configurable** - Set your own work/break intervals
 
-## 🚀 How It Works
+## How It Works
 
 ```
 1. Install & Setup (one-time)
@@ -56,25 +53,25 @@ Perfect for developers, designers, remote workers, and anyone who works 10+ hour
 
 ---
 
-## 💪 Who Needs This?
+## Who Needs This?
 
 ### Perfect For:
-- 💻 **Software Developers** - Long coding sessions
-- 🎨 **Designers** - Hours in Photoshop/Figma
-- 📊 **Data Analysts** - Extended spreadsheet work
-- 📝 **Writers & Content Creators** - Marathon writing sessions
-- 🎓 **Students** - Study marathons
-- 🏠 **Remote Workers** - No office structure
+- **Software Developers** - Long coding sessions
+- **Designers** - Hours in Photoshop/Figma
+- **Data Analysts** - Extended spreadsheet work
+- **Writers & Content Creators** - Marathon writing sessions
+- **Students** - Study marathons
+- **Remote Workers** - No office structure
 
 ### You Need BreakGuard If You:
-- ✅ Work 8-15+ hours continuously
-- ✅ Ignore break reminders regularly
-- ✅ Suffer from eye strain or back pain
-- ✅ Skip meals or bathroom breaks
-- ✅ Feel guilty taking breaks
-- ✅ Have poor self-discipline for health habits
+- Work 8-15+ hours continuously
+- Ignore break reminders regularly
+- Suffer from eye strain or back pain
+- Skip meals or bathroom breaks
+- Feel guilty taking breaks
+- Have poor self-discipline for health habits
 
-## 🔒 Security & Authentication
+## Security & Authentication
 
 ### Two-Factor Unlock System
 
@@ -92,15 +89,15 @@ Perfect for developers, designers, remote workers, and anyone who works 10+ hour
 
 ### Anti-Bypass Features
 
-- 🚫 **Keyboard blocking** - Alt+Tab, Alt+F4, Win+D disabled
-- 🚫 **Task Manager auto-close** - Can't kill the process easily
-- 🚫 **Fullscreen always-on-top** - Covers all windows
-- 🚫 **Monitor control** - Physical screen turns off via IoT
-- ⚡ **Survives restart** - Lock persists after reboot
+- **Keyboard blocking** - Alt+Tab, Alt+F4, Win+D disabled
+- **Task Manager auto-close** - Can't kill the process easily
+- **Fullscreen always-on-top** - Covers all windows
+- **Monitor control** - Physical screen turns off via IoT
+- **Survives restart** - Lock persists after reboot
 
 > **Note:** BreakGuard is designed for self-discipline, not military-grade security. Advanced users can bypass via Safe Mode or external boot — this is intentional. The goal is habit formation, not imprisonment.
 
-## 🎮 Monitor Control (Tinxy IoT)
+## Monitor Control (Tinxy IoT)
 
 BreakGuard integrates with **Tinxy** smart switches to physically control your monitor power.
 
@@ -120,7 +117,7 @@ BreakGuard integrates with **Tinxy** smart switches to physically control your m
 
 > **Tinxy is optional** - BreakGuard works fine without it using software monitor control
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Component | Technology | Purpose |
 |-----------|------------|----------|
@@ -141,28 +138,44 @@ BreakGuard/
 ├── config.json                # User configuration
 ├── install.bat                # Windows installer
 ├── run_breakguard.bat         # Quick launcher
+├── test_installation.py       # Installation verification
+├── assets/
+│   ├── logo.ico               # Application icon
+│   └── logo.png               # Application logo
 ├── src/
 │   ├── setup_wizard_gui_pyqt.py    # Setup wizard (PyQt6)
 │   ├── lock_screen_pyqt.py         # Lock screen (PyQt6)
 │   ├── settings_gui_pyqt.py        # Settings panel (PyQt6)
+│   ├── warning_dialog.py           # Warning notifications
+│   ├── error_dialog.py             # Error dialogs
+│   ├── debug_window.py             # Debug console
 │   ├── totp_auth.py                # Google Authenticator logic
 │   ├── face_verification.py        # Face recognition
 │   ├── tinxy_api.py                # Tinxy IoT integration
 │   ├── work_timer.py               # Break timer logic
+│   ├── keyboard_blocker.py         # Keyboard blocking during lock
 │   ├── windows_startup.py          # Auto-start registry
-│   └── config_manager.py           # Config file handler
-└── data/
-    ├── face_encodings.json        # Stored face data
-    └── totp_secret.enc            # Encrypted TOTP secret
+│   ├── config_manager.py           # Config file handler
+│   ├── state_manager.py            # Application state management
+│   ├── exceptions.py               # Custom exceptions
+│   └── theme/
+│       ├── __init__.py
+│       ├── theme.py                # Theme manager
+│       └── styles.qss              # Qt stylesheet
+├── data/
+│   ├── face_encodings.json        # Stored face data
+│   ├── totp_secret.enc            # Encrypted TOTP secret
+│   └── app_state.json             # Application state
+└── logs/                          # Application logs
 ```
 
-## 💾 Installation
+## Installation
 
 ### For Non-Technical Users (Easy Way)
 
 1. **Install Python 3.10 or higher**
    - Download from [python.org](https://www.python.org/downloads/)
-   - ⚠️ **IMPORTANT:** Check "Add Python to PATH" during installation
+   - **IMPORTANT:** Check "Add Python to PATH" during installation
 
 2. **Download BreakGuard**
    - Clone or download ZIP from GitHub
@@ -221,7 +234,7 @@ The following packages will be installed:
 - `requests` - Tinxy API calls
 - `cryptography` - Secure storage
 
-## ⚙️ Configuration
+## Configuration
 
 All settings are stored in `config.json`:
 
@@ -266,22 +279,22 @@ All settings are stored in `config.json`:
 
 **Tinxy API Documentation:** https://tinxyapi.pages.dev/
 
-## 🎮 Usage Guide
+## Usage Guide
 
 ### Daily Workflow
 
 1. **Start BreakGuard**
    - Run `run_breakguard.bat` or `python main.py`
-   - System tray icon appears (🛡️)
+   - System tray icon appears
    - Timer starts counting down
 
 2. **During Work**
    - Hover over tray icon to see time remaining
    - Right-click icon for menu:
-     - 📊 View Status
-     - ⚙️ Settings
-     - ⏸️ Pause (temporary)
-     - 🚪 Exit
+     - View Status
+     - Settings
+     - Pause (temporary)
+     - Exit
 
 3. **Warning Notification**
    - 5 minutes before break: Warning popup
@@ -289,16 +302,16 @@ All settings are stored in `config.json`:
    - Option to snooze once (if enabled)
 
 4. **Break Time - Lock Screen Appears**
-   - 🔒 Fullscreen lock takes over
-   - 🖥️ Monitor turns off (if Tinxy enabled)
-   - ⏳ Timer shows break countdown
-   - ⛔ Can't Alt+Tab, can't close
+   - Fullscreen lock takes over
+   - Monitor turns off (if Tinxy enabled)
+   - Timer shows break countdown
+   - Can't Alt+Tab, can't close
 
 5. **Unlock Process**
    - **Step 1:** Enter 6-digit code from Google Authenticator app
    - **Step 2:** Face verification via webcam
-   - ✅ If both pass: Unlock granted
-   - ❌ If either fails: Stays locked, try again
+   - If both pass: Unlock granted
+   - If either fails: Stays locked, try again
 
 6. **After Unlock**
    - Work timer resets and restarts
@@ -308,13 +321,13 @@ All settings are stored in `config.json`:
 ### System Tray Menu
 
 ```
-🛡️ BreakGuard
-  ├─ 🟢 Status: Active (42 mins remaining)
-  ├─ ⏸️ Pause Timer
-  ├─ ⚙️ Settings
-  ├─ 🔄 Run Setup Again
-  ├─ 📄 View Logs
-  └─ 🚪 Exit BreakGuard
+BreakGuard
+  ├─ Status: Active (42 mins remaining)
+  ├─ Pause Timer
+  ├─ Settings
+  ├─ Run Setup Again
+  ├─ View Logs
+  └─ Exit BreakGuard
 ```
 
 ### Google Authenticator Setup
@@ -354,7 +367,7 @@ All settings are stored in `config.json`:
 
 **Privacy:** Face data is stored locally in encrypted format, never uploaded anywhere.
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Installation Issues
 
@@ -384,7 +397,6 @@ All settings are stored in `config.json`:
 - **Solution:** This is a known PyQt6 styling issue
 - **Solution:** Clear Python cache: Delete `src/__pycache__` folder
 - **Solution:** Restart application
-- **Solution:** See PYQT6_IMPLEMENTATION.md for details
 
 ### Lock Screen Issues
 
@@ -434,9 +446,9 @@ If you're truly stuck and need to bypass:
 
 > **Remember:** The goal is building discipline. If you bypass too often, BreakGuard won't help you.
 
-## 📊 Project Roadmap
+## Project Roadmap
 
-### ✅ Completed (v1.0)
+### Completed (v1.0)
 - [x] PyQt6 modern UI
 - [x] Google Authenticator (TOTP)
 - [x] Face verification
@@ -446,13 +458,13 @@ If you're truly stuck and need to bypass:
 - [x] Lock screen with keyboard blocking
 - [x] System tray integration
 
-### 🚧 In Progress (v1.1)
+### In Progress (v1.1)
 - [ ] Fix 6-box OTP input styling issues
 - [ ] Improve face recognition accuracy
 - [ ] Better error logging
 - [ ] Settings panel improvements
 
-### 🔮 Future Features (v2.0)
+### Future Features (v2.0)
 - [ ] Break activity suggestions (stretches, eye exercises)
 - [ ] Break statistics dashboard
 - [ ] Multiple user profiles
@@ -466,7 +478,7 @@ If you're truly stuck and need to bypass:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Here's how you can help:
 
@@ -498,18 +510,16 @@ Contributions are welcome! Here's how you can help:
 - Translate to other languages
 
 ### Areas Needing Help
-- 🎨 UI/UX improvements
-- 🔒 Security enhancements
-- 📱 Mobile app development
-- 🧪 Testing on different Windows versions
-- 🌐 Internationalization (i18n)
-- 📝 Better documentation
-
-**Repository:** [github.com/ProgrammerNomad/BreakGuard](https://github.com/ProgrammerNomad/BreakGuard)
+- UI/UX improvements
+- Security enhancements
+- Mobile app development
+- Testing on different Windows versions
+- Internationalization (i18n)
+- Better documentation
 
 ---
 
-## 📄 License
+## License
 
 **MIT License** - Free to use, modify, and distribute.
 
@@ -521,7 +531,7 @@ See [LICENSE](LICENSE) file for full details.
 
 ---
 
-## 💡 Philosophy
+## Philosophy
 
 > "If willpower was enough, reminders would work.  
 > BreakGuard exists because discipline needs structure.  
@@ -535,39 +545,29 @@ We work in an industry where 12-hour days are normalized. Where skipping meals i
 
 ---
 
-## ⭐ Support the Project
+## Support the Project
 
 If BreakGuard helps you stay healthy:
 
-- ⭐ **Star this repository** on GitHub
-- 👥 **Share with colleagues** who need it
-- 🐛 **Report bugs** you encounter
-- 💡 **Suggest features** you'd like
-- 📝 **Write about it** on your blog
-- 💵 **Sponsor development** (link coming soon)
+- **Star this repository** on GitHub
+- **Share with colleagues** who need it
+- **Report bugs** you encounter
+- **Suggest features** you'd like
+- **Write about it** on your blog
+- **Sponsor development** (link coming soon)
 
-Every star motivates us to keep improving! 🚀
+Every star motivates us to keep improving!
 
 ---
 
-## 📧 Contact
+## Contact
 
 - **Issues:** [GitHub Issues](https://github.com/ProgrammerNomad/BreakGuard/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/ProgrammerNomad/BreakGuard/discussions)
-- **Email:** programmernomad@example.com (update with real email)
+- **Repository:** [https://github.com/ProgrammerNomad/BreakGuard](https://github.com/ProgrammerNomad/BreakGuard)
 
 ---
 
-## 🚀 Quick Links
+**Built with love for developers who care about their health**
 
-- [Installation Guide](SETUP.md)
-- [Quick Start](QUICKSTART.md)
-- [Architecture](ARCHITECTURE.md)
-- [PyQt6 Implementation](PYQT6_IMPLEMENTATION.md)
-- [Screens & Wireframes](SCREENS_WIREFRAMES.md)
-
----
-
-**Built with ❤️ for developers who care about their health**
-
-**Stay healthy. Stay productive. Use BreakGuard. 🛡️**
+**Stay healthy. Stay productive. Use BreakGuard.**
