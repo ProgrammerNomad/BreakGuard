@@ -422,12 +422,6 @@ class SettingsWindow(QWidget):
         
         layout.addStretch()
         
-        # Version info
-        version_label = QLabel("BreakGuard v1.0\n© 2025")
-        version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        version_label.setProperty("class", "info-text")
-        layout.addWidget(version_label)
-        
         return tab
     
     def _load_settings(self):
