@@ -297,9 +297,11 @@ All settings are stored in `config.json`:
      - Exit
 
 3. **Warning Notification**
-   - 5 minutes before break: Warning popup
-   - "Break in 5 minutes - save your work!"
-   - Option to snooze once (if enabled)
+   - Dynamic time display shows exact remaining time (e.g., "5 minutes 30 seconds")
+   - Popup notification with warning icon
+   - Dialog shows next break time and work duration
+   - Option to snooze once (if enabled in settings)
+   - Automatically closes when break time arrives
 
 4. **Break Time - Lock Screen Appears**
    - Fullscreen lock takes over
@@ -309,9 +311,13 @@ All settings are stored in `config.json`:
 
 5. **Unlock Process**
    - **Step 1:** Enter 6-digit code from Google Authenticator app
-   - **Step 2:** Face verification via webcam
+     - Use Backspace key to delete digits
+     - PIN boxes have dark background with cyan borders for visibility
+     - Paste support (Ctrl+V) for quick entry
+   - **Step 2:** Face verification via webcam (if enabled)
    - If both pass: Unlock granted
    - If either fails: Stays locked, try again
+   - Limited attempts before temporary lockout
 
 6. **After Unlock**
    - Work timer resets and restarts
@@ -320,17 +326,29 @@ All settings are stored in `config.json`:
 
 ### System Tray Menu
 
+Right-click the tray icon to access:
+
 ```
 BreakGuard
-  ├─ Active (18 min remaining)
-  ├─ Quick Settings
-  ├─ Pause Timer
-  ├─ Settings
-  ├─ Debug Info
-  ├─ Run Setup Again
-  ├─ Skip Current Break
-  └─ Exit BreakGuard
+  ├─ 🟢 Active (18 min remaining)      [Status display]
+  ├─ ⚡ Quick Settings                  [Submenu]
+  │   ├─ 🕒 30 minutes
+  │   ├─ 🕒 1 hour
+  │   ├─ 🕒 90 minutes
+  │   └─ 🕒 2 hours
+  ├─ ⏸️ Pause Timer                     [Pause/Resume with notification]
+  ├─ ⚙️ Settings                        [Open settings window]
+  ├─ 🐛 Debug Info                      [System diagnostics]
+  ├─ 🔄 Run Setup Again                 [Re-run setup wizard]
+  ├─ ⏭️ Skip Current Break              [Requires authentication]
+  └─ 🚪 Exit BreakGuard                 [Close application]
 ```
+
+**New Features:**
+- All actions show system tray notifications
+- Quick settings instantly update work interval
+- Pause/Resume shows remaining time
+- Settings changes are automatically applied
 
 ### Google Authenticator Setup
 
@@ -395,10 +413,11 @@ BreakGuard
 - **Solution:** Try different USB camera
 - **Solution:** Skip face verification (TOTP still works)
 
-**Problem:** 6 OTP input boxes not showing
-- **Solution:** This is a known PyQt6 styling issue
-- **Solution:** Clear Python cache: Delete `src/__pycache__` folder
-- **Solution:** Restart application
+**Problem:** 6 OTP input boxes not showing or not visible
+- **Solution:** ✅ **FIXED** - Dark PIN boxes with cyan borders now clearly visible
+- **Solution:** Backspace key now works to delete digits (left to right navigation)
+- **Solution:** White background removed from authentication area
+- **Solution:** If still having issues, restart application
 
 ### Lock Screen Issues
 
@@ -460,13 +479,18 @@ If you're truly stuck and need to bypass:
 - [x] Lock screen with keyboard blocking
 - [x] System tray integration
 
-### In Progress (v1.1)
-- [ ] Fix 6-box OTP input styling issues
-- [ ] Improve face recognition accuracy
-- [ ] Better error logging
-- [ ] Settings panel improvements
+### Completed (v1.1)
+- [x] Fixed white background visibility on lock screen authentication
+- [x] Added dynamic time display in warning notifications
+- [x] iPhone-style backspace functionality for PIN entry
+- [x] Standard PyQt6 checkboxes across all setup pages
+- [x] Camera lifecycle management (only active on face verification page)
+- [x] System tray notifications for all user actions (pause/resume/settings)
+- [x] Improved PIN box visibility with cyan borders and dark backgrounds
 
 ### Future Features (v2.0)
+- [ ] Improve face recognition accuracy in various lighting conditions
+- [ ] Advanced error logging and diagnostics
 - [ ] Break activity suggestions (stretches, eye exercises)
 - [ ] Break statistics dashboard
 - [ ] Multiple user profiles

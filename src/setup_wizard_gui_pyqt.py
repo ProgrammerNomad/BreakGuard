@@ -638,7 +638,7 @@ class GoogleAuthPage(QWizardPage):
     def _verify_code(self):
         """Verify OTP code"""
         if not self.secret:
-            self.status_label.setText("❌ Generate QR code first")
+            self.status_label.setText("Generate QR code first")
             self.status_label.setStyleSheet("color: red;")
             return
         
@@ -650,14 +650,11 @@ class GoogleAuthPage(QWizardPage):
             return
         
         if self.totp.verify_code(code, self.secret):
-            self.status_label.setText("✅ Code verified successfully!")
+            self.status_label.setText("Code verified successfully!")
             self.status_label.setStyleSheet("color: green; font-weight: bold;")
-            # Save secret
             self.totp.save_secret(self.secret)
-            # Optional: Auto-advance wizard?
-            # self.wizard().next() 
         else:
-            self.status_label.setText("❌ Invalid code. Try again.")
+            self.status_label.setText("Invalid code. Try again.")
             self.status_label.setStyleSheet("color: red;")
             for box in self.otp_inputs:
                 box.clear()
@@ -1024,7 +1021,7 @@ class FaceVerificationPage(QWizardPage):
         """Complete face capture"""
         self._stop_capture_process()
         self.face_verifier.save_registered_faces()
-        self.status_label.setText("✅ Face verification setup complete!")
+        self.status_label.setText("Face verification setup complete!")
         self.status_label.setStyleSheet("font-size: 14px; font-weight: bold; color: green;")
         self.capture_btn.setText("Retake Photos")
         self.progress_text.setText("All photos captured successfully")
@@ -1269,10 +1266,10 @@ class TinxyPage(QWizardPage):
         
         tinxy = TinxyAPI(api_key, device_id)
         if tinxy.test_connection():
-            self.status_label.setText("✅ Connected successfully")
+            self.status_label.setText("Connected successfully")
             self.status_label.setStyleSheet("color: #27ae60; font-weight: bold; margin-left: 10px;")
         else:
-            self.status_label.setText("❌ Connection failed")
+            self.status_label.setText("Connection failed")
             self.status_label.setStyleSheet("color: #c0392b; margin-left: 10px;")
         
         self.test_btn.setEnabled(True)
@@ -1291,11 +1288,10 @@ class CompletePage(QWizardPage):
         layout.setSpacing(20)
         layout.setContentsMargins(40, 40, 40, 40)
         
-        # Success Icon
-        icon_label = QLabel("✅")
-        icon_label.setFont(QFont("Segoe UI", 64))
+        icon_label = QLabel("COMPLETE")
+        icon_label.setFont(QFont("Segoe UI", 32, QFont.Weight.Bold))
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        # Optional: Add a drop shadow to the icon for depth
+        icon_label.setStyleSheet("color: #27ae60;")
         shadow = QGraphicsDropShadowEffect()
         shadow.setBlurRadius(20)
         shadow.setColor(QColor(0, 0, 0, 30))

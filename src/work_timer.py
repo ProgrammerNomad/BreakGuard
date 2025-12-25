@@ -115,56 +115,47 @@ class BreakGuardApp(QObject):
         # Create menu
         menu = QMenu()
         
-        # Status action (not clickable, just shows info)
-        self.status_action = QAction("🟢 Active", menu)
+        self.status_action = QAction("Active", menu)
         self.status_action.setEnabled(False)
         menu.addAction(self.status_action)
         
         menu.addSeparator()
         
-        # Quick Settings submenu
-        quick_settings_menu = menu.addMenu("⚡ Quick Settings")
+        quick_settings_menu = menu.addMenu("Quick Settings")
         
-        # Work interval shortcuts
         intervals = [(30, "30 minutes"), (60, "1 hour"), (90, "90 minutes"), (120, "2 hours")]
         for minutes, label in intervals:
-            action = QAction(f"🕒 {label}", quick_settings_menu)
+            action = QAction(label, quick_settings_menu)
             action.triggered.connect(lambda checked, m=minutes: self._quick_change_interval(m))
             quick_settings_menu.addAction(action)
         
         menu.addSeparator()
         
-        # Pause/Resume
-        self.pause_action = QAction("⏸️ Pause Timer", menu)
+        self.pause_action = QAction("Pause Timer", menu)
         self.pause_action.triggered.connect(self.toggle_pause)
         menu.addAction(self.pause_action)
         
-        # Settings
-        settings_action = QAction("⚙️ Settings", menu)
+        settings_action = QAction("Settings", menu)
         settings_action.triggered.connect(self.open_settings)
         menu.addAction(settings_action)
         
-        # Debug Window
-        debug_action = QAction("🐛 Debug Info", menu)
+        debug_action = QAction("Debug Info", menu)
         debug_action.triggered.connect(self.open_debug_window)
         menu.addAction(debug_action)
         
-        # Run setup again
-        setup_action = QAction("🔄 Run Setup Again", menu)
+        setup_action = QAction("Run Setup Again", menu)
         setup_action.triggered.connect(self.run_setup)
         menu.addAction(setup_action)
         
         menu.addSeparator()
         
-        # Skip break (requires authentication)
-        skip_action = QAction("⏭️ Skip Current Break", menu)
+        skip_action = QAction("Skip Current Break", menu)
         skip_action.triggered.connect(self._skip_break)
         menu.addAction(skip_action)
         
         menu.addSeparator()
         
-        # Exit
-        exit_action = QAction("🚪 Exit BreakGuard", menu)
+        exit_action = QAction("Exit BreakGuard", menu)
         exit_action.triggered.connect(self.exit_app)
         menu.addAction(exit_action)
         
@@ -220,10 +211,9 @@ class BreakGuardApp(QObject):
                     f"BreakGuard - {minutes}:{seconds:02d} remaining"
                 )
             
-            # Update status action
             if hasattr(self, 'status_action'):
                 self.status_action.setText(
-                    f"🟢 Active ({minutes} min remaining)"
+                    f"Active ({minutes} min remaining)"
                 )
             
             # Check if time's up
@@ -308,8 +298,7 @@ class BreakGuardApp(QObject):
             pass
             
         self.tray_icon.showMessage(
-            "💤 Snoozed",
-            "Break snoozed for 5 minutes.",
+                "Snoozed",
             QSystemTrayIcon.MessageIcon.Information,
             3000
         )
@@ -410,9 +399,8 @@ class BreakGuardApp(QObject):
             self.is_paused = False
             self.work_timer.start()
             
-            # Update tray
             if hasattr(self, 'status_action'):
-                self.status_action.setText("🟢 Active")
+                self.status_action.setText("Active")
             if self.tray_icon:
                 self.tray_icon.showMessage(
                     "BreakGuard Started",
@@ -429,37 +417,33 @@ class BreakGuardApp(QObject):
             return
         
         if self.is_paused:
-            # Resume
             self.is_paused = False
             self.work_timer.start()
-            self.pause_action.setText("⏸️ Pause Timer")
-            self.status_action.setText("🟢 Active")
+            self.pause_action.setText("Pause Timer")
+            self.status_action.setText("Active")
             if not self.state_manager.is_state(AppState.WORKING):
                 self.state_manager.transition_to(AppState.WORKING)
             
-            # Show notification
             if self.tray_icon:
                 minutes_left = self.time_remaining_seconds // 60
                 self.tray_icon.showMessage(
-                    "▶️ Timer Resumed",
+                    "Timer Resumed",
                     f"Work timer resumed. {minutes_left} minutes remaining until break.",
                     QSystemTrayIcon.MessageIcon.Information,
                     3000
                 )
         else:
-            # Pause
             self.is_paused = True
             self.work_timer.stop()
             self.warning_timer.stop()
-            self.pause_action.setText("▶️ Resume Timer")
-            self.status_action.setText("⏸️ Paused")
+            self.pause_action.setText("Resume Timer")
+            self.status_action.setText("Paused")
             if not self.state_manager.is_state(AppState.PAUSED):
                 self.state_manager.transition_to(AppState.PAUSED)
             
-            # Show notification
             if self.tray_icon:
                 self.tray_icon.showMessage(
-                    "⏸️ Timer Paused",
+                    "Timer Paused",
                     "Work timer has been paused. Resume anytime from the tray menu.",
                     QSystemTrayIcon.MessageIcon.Information,
                     3000
@@ -538,16 +522,14 @@ class BreakGuardApp(QObject):
         else:
             self.tinxy = None
         
-        # Restart timer if not locked
         if not self.is_locked:
             self.work_timer.stop()
             self.warning_timer.stop()
             self.start()
         
-        # Show notification
         if self.tray_icon:
             self.tray_icon.showMessage(
-                "⚙️ Settings Updated",
+                "Settings Updated",
                 "Your settings have been saved and applied.",
                 QSystemTrayIcon.MessageIcon.Information,
                 3000
@@ -562,13 +544,11 @@ class BreakGuardApp(QObject):
     
     def _on_setup_completed(self) -> None:
         """Handle setup wizard completion"""
-        # Reload settings
         self._on_settings_changed()
         
-        # Show completion notification
         if self.tray_icon:
             self.tray_icon.showMessage(
-                "✅ Setup Complete",
+                "Setup Complete",
                 "BreakGuard has been configured and is now active.",
                 QSystemTrayIcon.MessageIcon.Information,
                 3000

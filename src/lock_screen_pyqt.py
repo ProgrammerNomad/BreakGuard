@@ -458,10 +458,9 @@ class LockScreen(QWidget):
         if hasattr(self, 'clear_button'):
             self.clear_button.setEnabled(False)
         
-        # Verify
         if self.totp.verify_code(code):
-            self._show_status("✅ Code verified!", True)
-            QTimer.singleShot(500, self._unlock)  # Give user feedback before unlocking
+            self._show_status("Code verified!", True)
+            QTimer.singleShot(500, self._unlock)
         else:
             # Hide loading and re-enable inputs on failure
             self._show_loading(False)
@@ -482,14 +481,13 @@ class LockScreen(QWidget):
                 lockout_duration = lockout_times[min(self.lockout_count - 1, len(lockout_times) - 1)]
                 minutes = lockout_duration // 60
                 
-                self._show_status(f"❌ Too many attempts! Locked for {minutes} minute(s)", False)
+                self._show_status(f"Too many attempts! Locked for {minutes} minute(s)", False)
                 self._shake_totp_inputs()
                 self._disable_inputs(lockout_duration)
                 
-                # Log security event
                 logger.warning(f"Authentication lockout #{self.lockout_count} triggered: {lockout_duration}s")
             else:
-                self._show_status("❌ Invalid code!", False)
+                self._show_status("Invalid code!", False)
                 self._shake_totp_inputs()
                 
                 # Clear inputs after 1 second
@@ -544,13 +542,13 @@ class LockScreen(QWidget):
         
         if self.current_frame is None:
             if hasattr(self, 'face_status_label'):
-                self.face_status_label.setText("❌ No camera frame available")
+                self.face_status_label.setText("No camera frame available")
             self._stop_camera()
             return
         
         if self.face_verifier.verify_face(self.current_frame):
             if hasattr(self, 'face_status_label'):
-                self.face_status_label.setText("✅ Face verified!")
+                self.face_status_label.setText("Face verified!")
             self._stop_camera()
             QTimer.singleShot(500, self._unlock)
         else:
@@ -559,11 +557,11 @@ class LockScreen(QWidget):
             
             if self.attempts_remaining <= 0:
                 if hasattr(self, 'face_status_label'):
-                    self.face_status_label.setText("❌ Too many failed attempts. Try again in 1 minute.")
+                    self.face_status_label.setText("Too many failed attempts. Try again in 1 minute.")
                 self._disable_inputs(60)
             else:
                 if hasattr(self, 'face_status_label'):
-                    self.face_status_label.setText("❌ Face not recognized. Try again.")
+                    self.face_status_label.setText("Face not recognized. Try again.")
             
             self._stop_camera()
     
@@ -583,12 +581,9 @@ class LockScreen(QWidget):
             # Use tasklist to check for Taskmgr.exe
             import subprocess
             
-            # Check if process exists
-            output = subprocess.check_output('tasklist /FI "IMAGENAME eq Taskmgr.exe"', shell=True)
             if b"Taskmgr.exe" in output:
-                # Kill it
                 subprocess.call('taskkill /F /IM Taskmgr.exe', shell=True)
-                self._show_status("⚠️ Task Manager is blocked!", False)
+                self._show_status("Task Manager is blocked!", False)
         except Exception:
             pass
 
