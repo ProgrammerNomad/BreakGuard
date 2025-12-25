@@ -1,43 +1,49 @@
-# Ignore Python cache
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Virtual environment
+# Type checking cache
+.mypy_cache/
+
+# PyQt
+*.ui.py
+
+# Virtual Environment
 venv/
-env/
 ENV/
-
-# Data directory (sensitive user data)
-data/
-*.pkl
-*.enc
-*.key
-
-# Configuration (contains sensitive info)
-config.json
+env/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
-# Build
-build/
-dist/
-*.egg-info/
-*.spec
+# BreakGuard specific
+config.json
+data/
+*.log
 
 # OS
 .DS_Store
 Thumbs.db
-
-# Logs
-*.log
-
-# Temporary files
-*.tmp
-*.temp
-/.mypy_cache
+desktop.ini
