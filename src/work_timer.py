@@ -115,6 +115,38 @@ class BreakGuardApp(QObject):
         # Create menu
         menu = QMenu()
         
+        # Apply stylesheet for hover effects
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #2b2b2b;
+                color: #e0e0e0;
+                border: 1px solid #404040;
+                padding: 5px;
+            }
+            QMenu::item {
+                padding: 6px 25px 6px 20px;
+                border-radius: 4px;
+                margin: 2px 5px;
+            }
+            QMenu::item:selected {
+                background-color: #00d4ff;
+                color: #1a1a1a;
+            }
+            QMenu::item:disabled {
+                color: #808080;
+                background-color: transparent;
+            }
+            QMenu::separator {
+                height: 1px;
+                background: #404040;
+                margin: 5px 10px;
+            }
+            QMenu::indicator {
+                width: 13px;
+                height: 13px;
+            }
+        """)
+        
         self.status_action = QAction("Active", menu)
         self.status_action.setEnabled(False)
         menu.addAction(self.status_action)

@@ -14,10 +14,16 @@ class Colors:
     SURFACE = "#ffffff"
     TEXT = "#333333"
     TEXT_SECONDARY = "#595959"  # Changed from #666666 for better contrast (WCAG AA: 7:1 on white)
+    TEXT_MUTED = "#95a5a6"  # Light gray for helper/hint text
+    TEXT_DARK = "#2c3e50"  # Dark blue-gray for titles
+    TEXT_MEDIUM = "#7f8c8d"  # Medium gray for subtitles
+    TEXT_BODY = "#34495e"  # Dark gray for body text
+    ICON_DARK = "#555555"  # Dark gray for icons
     SUCCESS = "#28a745"
     WARNING = "#e89f00"  # Darkened from #ffc107 for better contrast
     ERROR = "#dc3545"
     BORDER = "#e0e0e0"
+    DIVIDER = "#ecf0f1"  # Very light gray for dividers
     
     # Legacy colors mapped to new system
     LOCK_BG = "#1e1e1e"  # Dark background for lock screen
@@ -67,10 +73,16 @@ def load_stylesheet():
             "@SURFACE": Colors.SURFACE,
             "@TEXT": Colors.TEXT,
             "@TEXT_SECONDARY": Colors.TEXT_SECONDARY,
+            "@TEXT_MUTED": Colors.TEXT_MUTED,
+            "@TEXT_DARK": Colors.TEXT_DARK,
+            "@TEXT_MEDIUM": Colors.TEXT_MEDIUM,
+            "@TEXT_BODY": Colors.TEXT_BODY,
+            "@ICON_DARK": Colors.ICON_DARK,
             "@SUCCESS": Colors.SUCCESS,
             "@WARNING": Colors.WARNING,
             "@ERROR": Colors.ERROR,
             "@BORDER": Colors.BORDER,
+            "@DIVIDER": Colors.DIVIDER,
             "@FONT_FAMILY": Fonts.FAMILY_PRIMARY,
             "@SPACING_M": Spacing.M,
             "@SPACING_L": Spacing.L

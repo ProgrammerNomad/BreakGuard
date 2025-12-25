@@ -289,6 +289,12 @@ class LockScreen(QWidget):
         hint.setStyleSheet("color: #808080; font-size: 11px; background: transparent;")
         layout.addWidget(hint)
         
+        # Attempts counter
+        self.attempts_label = QLabel(f"Attempts remaining: {self.attempts_remaining}/5")
+        self.attempts_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.attempts_label.setStyleSheet("color: #a0a0a0; font-size: 12px; background: transparent; margin-top: 5px;")
+        layout.addWidget(self.attempts_label)
+        
         # Switch link
         if self.config.is_face_verification_enabled() and self.face_verifier:
             link = QPushButton("Use face unlock instead")
@@ -472,7 +478,17 @@ class LockScreen(QWidget):
                 self.clear_button.setEnabled(True)
             
             self.attempts_remaining -= 1
+            
+            # Update attempts label with color based on remaining attempts
+            if self.attempts_remaining <= 2:
+                attempts_color = "#ff4444"  # Red for critical
+            elif self.attempts_remaining <= 3:
+                attempts_color = "#ffaa00"  # Orange for warning
+            else:
+                attempts_color = "#a0a0a0"  # Gray for normal
+            
             self.attempts_label.setText(f"Attempts remaining: {self.attempts_remaining}/5")
+            self.attempts_label.setStyleSheet(f"color: {attempts_color}; font-size: 12px; background: transparent; margin-top: 5px; font-weight: bold;")
             
             if self.attempts_remaining <= 0:
                 # Exponential backoff: 1m, 5m, 15m
@@ -646,6 +662,7 @@ class LockScreen(QWidget):
             self.unlock_button.setEnabled(True)
         self.attempts_remaining = 5
         self.attempts_label.setText(f"Attempts remaining: {self.attempts_remaining}/5")
+        self.attempts_label.setStyleSheet("color: #a0a0a0; font-size: 12px; background: transparent; margin-top: 5px;")
     
     def _shake_totp_inputs(self) -> None:
         """Shake animation for invalid TOTP code"""

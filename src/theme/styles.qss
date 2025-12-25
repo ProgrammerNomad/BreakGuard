@@ -207,6 +207,11 @@ QLabel.text-secondary {
     font-size: 12px;
 }
 
+QLabel.text-danger {
+    color: @ERROR;
+    font-weight: bold;
+}
+
 QLabel.text-small {
     font-size: 12px;
 }

@@ -71,9 +71,8 @@ class WarningDialog(QDialog):
         info_layout.addWidget(QLabel(f"Time worked: {work_duration} minutes"))
         info_layout.addWidget(QLabel(f"Next break at: {next_break.strftime('%I:%M %p')}"))
         
-        save_label = QLabel("Save your work now!")
+        save_label = QLabel("⚠️ Save your work now!")
         save_label.setProperty("class", "text-danger")
-        save_label.setStyleSheet("color: #dc3545; font-weight: bold;")
         info_layout.addWidget(save_label)
         
         layout.addWidget(info_frame)

@@ -609,7 +609,7 @@ class SettingsWindow(QWidget):
         layout.setSpacing(20)
         
         # Logo/Title
-        title_label = QLabel("🛡️ BreakGuard")
+        title_label = QLabel("BreakGuard")
         title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title_label.setStyleSheet("font-size: 24px; font-weight: bold; margin-top: 20px;")
         layout.addWidget(title_label)
