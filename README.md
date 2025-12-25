@@ -2,7 +2,7 @@
 
 **Enforce healthy work breaks with unbreakable discipline.**
 
-BreakGuard is a Windows application that forces you to take regular breaks during long working hours. It locks your screen, controls your monitor via IoT, and requires secure two-factor authentication to unlock — making it impossible to skip breaks.
+BreakGuard is a Windows application that forces you to take regular breaks during long working hours. It locks your screen, controls your monitor via IoT, and requires secure two-factor authentication to unlock - making it impossible to skip breaks.
 
 Perfect for developers, designers, remote workers, and anyone who works 10+ hours continuously and struggles with self-discipline.
 ---
@@ -11,7 +11,7 @@ Perfect for developers, designers, remote workers, and anyone who works 10+ hour
 
 **The Problem:** You know breaks are important, but willpower fails when deadlines loom. Notifications get dismissed. Timers get ignored. Your health suffers.
 
-**The Solution:** BreakGuard doesn't ask — it enforces.
+**The Solution:** BreakGuard doesn't ask - it enforces.
 
 ### Key Features
 
@@ -95,7 +95,7 @@ Perfect for developers, designers, remote workers, and anyone who works 10+ hour
 - **Monitor control** - Physical screen turns off via IoT
 - **Survives restart** - Lock persists after reboot
 
-> **Note:** BreakGuard is designed for self-discipline, not military-grade security. Advanced users can bypass via Safe Mode or external boot — this is intentional. The goal is habit formation, not imprisonment.
+> **Note:** BreakGuard is designed for self-discipline, not military-grade security. Advanced users can bypass via Safe Mode or external boot - this is intentional. The goal is habit formation, not imprisonment.
 
 ## Monitor Control (Tinxy IoT)
 

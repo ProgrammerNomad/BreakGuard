@@ -344,9 +344,9 @@ class WorkIntervalsPage(QWizardPage):
         
         # Preset Buttons
         presets = [
-            ("60 minutes — Balanced work & eye care", 60),
-            ("90 minutes — Extended focus sessions", 90),
-            ("30 minutes — Frequent breaks for eye health", 30)
+            ("60 minutes - Balanced work & eye care", 60),
+            ("90 minutes - Extended focus sessions", 90),
+            ("30 minutes - Frequent breaks for eye health", 30)
         ]
         
         for text, val in presets:
@@ -1213,7 +1213,7 @@ class TinxyPage(QWizardPage):
         info_title.setStyleSheet("color: #2c3e50; border: none;")
         info_layout.addWidget(info_title)
         
-        info_text = QLabel("Tinxy allows BreakGuard to control smart switches during breaks — for example, turning off your monitor automatically.")
+        info_text = QLabel("Tinxy allows BreakGuard to control smart switches during breaks - for example, turning off your monitor automatically.")
         info_text.setWordWrap(True)
         info_text.setFont(QFont("Segoe UI", 10))
         info_text.setStyleSheet("color: #7f8c8d; border: none;")
