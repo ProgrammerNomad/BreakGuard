@@ -416,27 +416,13 @@ class GoogleAuthPage(QWizardPage):
         layout = QVBoxLayout()
         layout.setSpacing(20)
         
-        # Enable toggle (styled checkbox)
+        # Enable checkbox (standard PyQt6 style)
         self.enable_check = QCheckBox("Enable Google Authenticator")
         self.enable_check.setChecked(True)
         self.enable_check.stateChanged.connect(self._on_toggle_enabled)
         self.enable_check.setToolTip("Enable two-factor authentication for unlocking")
-        self.enable_check.setAccessibleName("Enable Google Authenticator toggle")
-        # Apply toggle switch styling
-        self.enable_check.setStyleSheet("""
-            QCheckBox::indicator {
-                width: 40px;
-                height: 20px;
-                border-radius: 10px;
-                background-color: #ccc;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #0d7377;
-            }
-            QCheckBox::indicator:checked:hover {
-                background-color: #14a19f;
-            }
-        """)
+        self.enable_check.setAccessibleName("Enable Google Authenticator checkbox")
+        self.enable_check.setAccessibleDescription("When enabled, you will need to enter a code from Google Authenticator to unlock")
         layout.addWidget(self.enable_check)
         
         # Main Content Area (Two Columns)
@@ -699,25 +685,13 @@ class FaceVerificationPage(QWizardPage):
         # Controls Container
         controls_layout = QHBoxLayout()
         
-        # Enable Toggle
+        # Enable checkbox (standard PyQt6 style)
         self.enable_check = QCheckBox("Enable face verification")
         self.enable_check.setChecked(True)
         self.enable_check.stateChanged.connect(self._on_toggle_enabled)
-        # Modern toggle style
-        self.enable_check.setStyleSheet("""
-            QCheckBox::indicator {
-                width: 40px;
-                height: 20px;
-                border-radius: 10px;
-                background-color: #ccc;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #0d7377;
-            }
-            QCheckBox::indicator:checked:hover {
-                background-color: #14a19f;
-            }
-        """)
+        self.enable_check.setToolTip("Enable facial recognition for unlocking")
+        self.enable_check.setAccessibleName("Enable face verification checkbox")
+        self.enable_check.setAccessibleDescription("When enabled, your camera will be used to verify your face before unlocking")
         controls_layout.addWidget(self.enable_check)
         
         controls_layout.addStretch()
@@ -1088,33 +1062,14 @@ class TinxyPage(QWizardPage):
         
         layout.addLayout(header_layout)
         
-        # Enable Toggle
-        toggle_layout = QHBoxLayout()
+        # Enable checkbox (standard PyQt6 style)
         self.enable_check = QCheckBox("Enable Tinxy integration")
         self.enable_check.setFont(QFont("Segoe UI", 11))
-        self.enable_check.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.enable_check.setStyleSheet("""
-            QCheckBox {
-                color: #34495e;
-                spacing: 10px;
-            }
-            QCheckBox::indicator {
-                width: 40px;
-                height: 20px;
-                border-radius: 10px;
-                background-color: #bdc3c7;
-            }
-            QCheckBox::indicator:checked {
-                background-color: #0d7377;
-            }
-            QCheckBox::indicator:checked:hover {
-                background-color: #14a19f;
-            }
-        """)
+        self.enable_check.setToolTip("Control IoT devices during breaks (optional)")
+        self.enable_check.setAccessibleName("Enable Tinxy integration checkbox")
+        self.enable_check.setAccessibleDescription("When enabled, you can control Tinxy IoT devices like turning off monitors during breaks")
         self.enable_check.stateChanged.connect(self._on_toggle_enabled)
-        toggle_layout.addWidget(self.enable_check)
-        toggle_layout.addStretch()
-        layout.addLayout(toggle_layout)
+        layout.addWidget(self.enable_check)
         
         # Configuration Card
         self.config_card = QFrame()
@@ -1474,7 +1429,8 @@ class SetupWizard(QWizard):
         self.addPage(WelcomePage())
         self.addPage(WorkIntervalsPage())
         self.addPage(GoogleAuthPage())
-        self.addPage(FaceVerificationPage())
+        face_page = FaceVerificationPage()
+        self.face_verification_page_id = self.addPage(face_page)
         self.addPage(TinxyPage())
         self.addPage(CompletePage())
         
@@ -1483,8 +1439,23 @@ class SetupWizard(QWizard):
         self.setButtonText(QWizard.WizardButton.BackButton, "← Back")
         self.setButtonText(QWizard.WizardButton.FinishButton, "Finish")
         
+        # Track page changes to manage camera lifecycle
+        self.currentIdChanged.connect(self._on_page_changed)
+        self.face_verification_page_id = None
+        
         # Connect finish
         self.finished.connect(self._on_finish)
+    
+    def _on_page_changed(self, page_id):
+        """Handle page changes - stop camera when leaving face verification page"""
+        # If we're leaving the face verification page, ensure camera is stopped
+        if hasattr(self, 'face_verification_page_id') and self.face_verification_page_id is not None:
+            # Get the face verification page
+            face_page = self.page(self.face_verification_page_id)
+            if face_page and page_id != self.face_verification_page_id:
+                # We've left the face verification page, ensure camera is stopped
+                if hasattr(face_page, '_stop_camera'):
+                    face_page._stop_camera()
     
     def _on_finish(self, result):
         """Handle wizard completion"""
@@ -1510,3 +1481,11 @@ class SetupWizard(QWizard):
                 startup.add_to_startup()
             
             self.setup_completed.emit()
+    
+    def closeEvent(self, event):
+        """Ensure camera is stopped when wizard closes"""
+        if hasattr(self, 'face_verification_page_id') and self.face_verification_page_id is not None:
+            face_page = self.page(self.face_verification_page_id)
+            if face_page and hasattr(face_page, '_stop_camera'):
+                face_page._stop_camera()
+        super().closeEvent(event)

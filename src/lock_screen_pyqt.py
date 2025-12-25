@@ -612,9 +612,6 @@ class LockScreen(QWidget):
         self.spinner_index = (self.spinner_index + 1) % len(spinner_frames)
         frame = spinner_frames[self.spinner_index]
         self.loading_label.setText(f"{frame} Verifying...")
-        # Also update face loading label if visible
-        if self.face_loading_label.isVisible():
-            self.face_loading_label.setText(f"{frame} Analyzing face...")
     
     def _unlock(self) -> None:
         """Unlock screen"""
