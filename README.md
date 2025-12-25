@@ -413,12 +413,6 @@ BreakGuard
 - **Solution:** Try different USB camera
 - **Solution:** Skip face verification (TOTP still works)
 
-**Problem:** 6 OTP input boxes not showing or not visible
-- **Solution:** ✅ **FIXED** - Dark PIN boxes with cyan borders now clearly visible
-- **Solution:** Backspace key now works to delete digits (left to right navigation)
-- **Solution:** White background removed from authentication area
-- **Solution:** If still having issues, restart application
-
 ### Lock Screen Issues
 
 **Problem:** Can't unlock even with correct code
@@ -446,26 +440,27 @@ BreakGuard
 - **Solution:** Check device ID in config.json
 - **Solution:** Test Tinxy in their app first
 - **Solution:** Check internet connection
-- **Solution:** BreakGuard works without Tinxy (software-only lock)
+
+**Note:** BreakGuard works fine without Tinxy (software-only lock)
 
 ### Auto-Start Issues
 
 **Problem:** BreakGuard doesn't start with Windows
 - **Solution:** Run setup wizard again
-- **Solution:** Manually add to Task Scheduler
 - **Solution:** Check `auto_start_windows` in config.json
 - **Solution:** Run app as Administrator once
 
-### Emergency Bypass
+---
 
-If you're truly stuck and need to bypass:
+## Emergency Bypass
+
+If you need to bypass the lock screen:
 
 1. **Restart in Safe Mode** (F8 during boot)
-2. **Boot from USB** with another OS
-3. **Edit config.json** from another account
-4. **Delete BreakGuard folder** (defeats the purpose!)
+2. **Edit config.json** - set intervals to very high values
+3. **Task Manager** (if not blocked) - End task
 
-> **Remember:** The goal is building discipline. If you bypass too often, BreakGuard won't help you.
+**Remember:** The goal is building healthy habits. Frequent bypassing defeats the purpose.
 
 ## Project Roadmap
 
