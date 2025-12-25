@@ -17,7 +17,7 @@ Perfect for developers, designers, remote workers, and anyone who works 10+ hour
 
 - **Beautiful Modern UI** - PyQt6 interface with Material Design
 - **Automatic Lock** - Screen locks after your configured work interval
-- **Two-Factor Unlock** - Google Authenticator (6-digit OTP) + Face verification
+- **Two-Factor Unlock** - Authenticator app (6-digit TOTP) + Face verification
 - **Monitor Control** - Turns off monitor via Tinxy IoT API
 - **Survives Reboots** - Auto-starts with Windows, enforces breaks even after restart
 - **Anti-Bypass** - Blocks Alt+Tab, Alt+F4, Task Manager during lock
@@ -30,7 +30,7 @@ Perfect for developers, designers, remote workers, and anyone who works 10+ hour
 1. Install & Setup (one-time)
    ├─ Run setup wizard
    ├─ Set work interval (e.g., 60 minutes)
-   ├─ Scan QR with Google Authenticator
+   ├─ Scan QR with authenticator app (Google Authenticator, Microsoft Authenticator, etc.)
    ├─ Register your face (optional)
    └─ Configure Tinxy IoT (optional)
 
@@ -46,7 +46,7 @@ Perfect for developers, designers, remote workers, and anyone who works 10+ hour
    └─ No way to skip or dismiss
 
 4. Unlock Process
-   ├─ Enter 6-digit code from Google Authenticator
+   ├─ Enter 6-digit code from authenticator app
    ├─ Face verification via camera
    └─ Unlock granted, work timer restarts
 ```
@@ -75,10 +75,11 @@ Perfect for developers, designers, remote workers, and anyone who works 10+ hour
 
 ### Two-Factor Unlock System
 
-**Step 1: Google Authenticator (TOTP)**
+**Step 1: Authenticator App (TOTP)**
 - Industry-standard Time-based One-Time Password
 - Works 100% offline (no internet needed)
 - 6-digit code changes every 30 seconds
+- Compatible with Google Authenticator, Microsoft Authenticator, Authy, and more
 - Same tech banks use for 2FA
 
 **Step 2: Face Verification**
@@ -123,7 +124,7 @@ BreakGuard integrates with **Tinxy** smart switches to physically control your m
 |-----------|------------|----------|
 | Language | Python 3.10+ | Core application |
 | UI Framework | PyQt6 | Modern graphical interface |
-| Authentication | pyotp | Google Authenticator (TOTP) |
+| Authentication | pyotp | TOTP Authenticator (Google, Microsoft, etc.) |
 | Face Recognition | OpenCV + face_recognition | Face verification |
 | IoT Control | Tinxy REST API | Monitor power control |
 | Startup | Windows Registry | Auto-start on boot |
@@ -149,7 +150,7 @@ BreakGuard/
 │   ├── warning_dialog.py           # Warning notifications
 │   ├── error_dialog.py             # Error dialogs
 │   ├── debug_window.py             # Debug console
-│   ├── totp_auth.py                # Google Authenticator logic
+│   ├── totp_auth.py                # TOTP authenticator logic
 │   ├── face_verification.py        # Face recognition
 │   ├── tinxy_api.py                # Tinxy IoT integration
 │   ├── work_timer.py               # Break timer logic
@@ -192,7 +193,7 @@ BreakGuard/
    ```
    - Follow the graphical wizard
    - Set work interval (e.g., 60 minutes)
-   - Scan QR code with Google Authenticator app
+   - Scan QR code with authenticator app
    - Register face (recommended)
    - Configure Tinxy (optional)
 
@@ -226,7 +227,7 @@ python main.py
 ### Dependencies
 The following packages will be installed:
 - `PyQt6` - Modern GUI framework
-- `pyotp` - Google Authenticator
+- `pyotp` - TOTP Authenticator support
 - `qrcode` - QR code generation
 - `opencv-python` - Face recognition
 - `face-recognition` - Face matching
@@ -261,7 +262,7 @@ All settings are stored in `config.json`:
 | `work_interval_minutes` | 60 | Work time before break (1-240 min) |
 | `warning_before_minutes` | 5 | Warning notification before lock |
 | `break_duration_minutes` | 10 | Minimum break time |
-| `totp_enabled` | true | Require Google Authenticator |
+| `totp_enabled` | true | Require authenticator app |
 | `face_verification_enabled` | true | Require face verification |
 | `tinxy_enabled` | false | Use Tinxy monitor control |
 | `auto_start_windows` | true | Auto-start with Windows |
@@ -310,7 +311,7 @@ All settings are stored in `config.json`:
    - Can't Alt+Tab, can't close
 
 5. **Unlock Process**
-   - **Step 1:** Enter 6-digit code from Google Authenticator app
+   - **Step 1:** Enter 6-digit code from authenticator app
      - Use Backspace key to delete digits
      - PIN boxes have dark background with cyan borders for visibility
      - Paste support (Ctrl+V) for quick entry
@@ -350,18 +351,24 @@ BreakGuard
 - Pause/Resume shows remaining time
 - Settings changes are automatically applied
 
-### Google Authenticator Setup
+### Authenticator App Setup
 
 1. **First Time (Setup Wizard)**
    - BreakGuard shows QR code on screen
-   - Open Google Authenticator app on phone
-   - Tap "+" button
+   - Open any TOTP authenticator app on your phone:
+     - Google Authenticator
+     - Microsoft Authenticator
+     - Authy
+     - 1Password
+     - LastPass Authenticator
+     - Or any other TOTP app
+   - Tap "+" button to add account
    - Select "Scan QR code"
    - Point camera at BreakGuard QR code
    - Account "BreakGuard" added to app
 
 2. **During Lock Screen**
-   - Open Google Authenticator app
+   - Open your authenticator app
    - Find "BreakGuard" entry
    - See 6-digit code (changes every 30 seconds)
    - Enter code in lock screen
@@ -405,7 +412,7 @@ BreakGuard
 **Problem:** QR code not showing
 - **Solution:** Install pillow: `pip install pillow`
 - **Solution:** Check console for errors
-- **Solution:** Manually enter secret key in Google Authenticator
+- **Solution:** Manually enter secret key in authenticator app
 
 **Problem:** Camera not working
 - **Solution:** Grant camera permissions in Windows Settings
@@ -466,7 +473,7 @@ If you need to bypass the lock screen:
 
 ### Completed (v1.0)
 - [x] PyQt6 modern UI
-- [x] Google Authenticator (TOTP)
+- [x] TOTP Authenticator (Google, Microsoft, Authy, etc.)
 - [x] Face verification
 - [x] Tinxy IoT integration
 - [x] Windows auto-start

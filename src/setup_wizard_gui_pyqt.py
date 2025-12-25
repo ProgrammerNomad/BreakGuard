@@ -403,11 +403,11 @@ class WorkIntervalsPage(QWizardPage):
         self.setTabOrder(self.work_spin, self.warning_spin)
 
 class GoogleAuthPage(QWizardPage):
-    """Google Authenticator setup - Step 3/6"""
+    """Authenticator setup - Step 3/6"""
     
     def __init__(self):
         super().__init__()
-        self.setTitle("Set up Google Authenticator")
+        self.setTitle("Set up Authenticator App")
         self.setSubTitle("Secure your breaks with two-factor authentication")
         
         self.totp = TOTPAuth()
@@ -417,12 +417,12 @@ class GoogleAuthPage(QWizardPage):
         layout.setSpacing(20)
         
         # Enable checkbox (standard PyQt6 style)
-        self.enable_check = QCheckBox("Enable Google Authenticator")
+        self.enable_check = QCheckBox("Enable Authenticator")
         self.enable_check.setChecked(True)
         self.enable_check.stateChanged.connect(self._on_toggle_enabled)
         self.enable_check.setToolTip("Enable two-factor authentication for unlocking")
-        self.enable_check.setAccessibleName("Enable Google Authenticator checkbox")
-        self.enable_check.setAccessibleDescription("When enabled, you will need to enter a code from Google Authenticator to unlock")
+        self.enable_check.setAccessibleName("Enable Authenticator checkbox")
+        self.enable_check.setAccessibleDescription("When enabled, you will need to enter a code from an authenticator app to unlock")
         layout.addWidget(self.enable_check)
         
         # Main Content Area (Two Columns)
@@ -477,7 +477,7 @@ class GoogleAuthPage(QWizardPage):
         
         self.step_labels = []
         steps = [
-            "1. Open Google Authenticator on your phone",
+            "1. Open any authenticator app on your phone",
             "2. Tap the '+' button",
             "3. Scan the QR code",
             "4. Enter the 6-digit code below"
@@ -1378,7 +1378,7 @@ class CompletePage(QWizardPage):
         # Add rows
         self._add_row("⏱️", "Work interval", f"{work_interval} minutes")
         self._add_row("⏰", "Warning before lock", f"{warning_time} minutes")
-        self._add_row("🔐", "Authentication", "Google Authenticator" if totp_enabled else "Disabled")
+        self._add_row("🔐", "Authentication", "Authenticator App" if totp_enabled else "Disabled")
         self._add_row("👤", "Face verification", "Enabled" if face_enabled else "Disabled")
         self._add_row("🔌", "Tinxy integration", "Enabled" if tinxy_enabled else "Disabled")
 

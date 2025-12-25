@@ -221,13 +221,13 @@ class SettingsWindow(QWidget):
         # Authentication Group
         auth_group = QGroupBox("Authentication")
         auth_group.setAccessibleName("Authentication")
-        auth_group.setAccessibleDescription("Choose security methods for unlocking the screen: TOTP from Google Authenticator or face verification")
+        auth_group.setAccessibleDescription("Choose security methods for unlocking the screen: TOTP from authenticator apps or face verification")
         auth_layout = QVBoxLayout()
         
-        self.totp_check = QCheckBox("Enable Google Authenticator (TOTP)")
+        self.totp_check = QCheckBox("Enable Authenticator (TOTP)")
         self.totp_check.setAccessibleName("Enable TOTP checkbox")
-        self.totp_check.setAccessibleDescription("Enable Google Authenticator (TOTP) as a security method. You will need to generate a code from an authenticator app to unlock")
-        self.totp_check.setToolTip("Enable Two-Factor Authentication using Google Authenticator")
+        self.totp_check.setAccessibleDescription("Enable authenticator app (TOTP) as a security method. You will need to generate a code from an authenticator app to unlock")
+        self.totp_check.setToolTip("Enable Two-Factor Authentication using authenticator app")
         auth_layout.addWidget(self.totp_check)
         
         self.face_check = QCheckBox("Enable Face Verification")
@@ -269,11 +269,11 @@ class SettingsWindow(QWidget):
         # Buttons
         btn_layout = QVBoxLayout()
         
-        reconfig_totp_btn = QPushButton("Reconfigure Google Authenticator")
+        reconfig_totp_btn = QPushButton("Reconfigure Authenticator")
         reconfig_totp_btn.clicked.connect(self._reconfigure_totp)
         reconfig_totp_btn.setAccessibleName("Reconfigure TOTP button")
-        reconfig_totp_btn.setAccessibleDescription("Generate a new QR code and secret key for Google Authenticator setup")
-        reconfig_totp_btn.setToolTip("Setup Google Authenticator again")
+        reconfig_totp_btn.setAccessibleDescription("Generate a new QR code and secret key for authenticator app setup")
+        reconfig_totp_btn.setToolTip("Setup authenticator app again")
         btn_layout.addWidget(reconfig_totp_btn)
         
         reconfig_face_btn = QPushButton("Re-register Face")
@@ -403,7 +403,7 @@ class SettingsWindow(QWidget):
         clear_totp_btn = QPushButton("Clear TOTP Secret")
         clear_totp_btn.clicked.connect(self._clear_totp)
         clear_totp_btn.setAccessibleName("Clear TOTP Secret button")
-        clear_totp_btn.setAccessibleDescription("Remove and reset the stored TOTP secret key. You will need to reconfigure Google Authenticator")
+        clear_totp_btn.setAccessibleDescription("Remove and reset the stored TOTP secret key. You will need to reconfigure your authenticator app")
         clear_totp_btn.setToolTip("Remove the stored TOTP secret")
         layout.addWidget(clear_totp_btn)
         
@@ -578,7 +578,7 @@ class SettingsWindow(QWidget):
         """Clear TOTP secret"""
         reply = QMessageBox.warning(
             self, "Clear TOTP",
-            "This will remove your Google Authenticator setup. Continue?",
+            "This will remove your authenticator app setup. Continue?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         

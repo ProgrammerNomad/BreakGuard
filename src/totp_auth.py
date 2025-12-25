@@ -1,6 +1,6 @@
 """
 TOTP Authentication Module
-Handles Google Authenticator setup and verification
+Handles authenticator app setup and verification
 """
 from __future__ import annotations
 
@@ -28,7 +28,9 @@ except ImportError:
     logger.warning("win32crypt not available - falling back to Fernet encryption")
 
 class TOTPAuth:
-    """Google Authenticator (TOTP) authentication handler"""
+    """TOTP (Time-based One-Time Password) authentication handler
+    Compatible with Google Authenticator, Microsoft Authenticator, Authy, and other TOTP apps
+    """
     
     def __init__(self, data_dir: str | Path = None):
         """Initialize TOTP authentication
@@ -167,11 +169,11 @@ class TOTPAuth:
             return None
     
     def generate_qr_code(self, secret: str = None, name: str = "BreakGuard", issuer: str = "BreakGuard") -> Image.Image:
-        """Generate QR code for Google Authenticator
+        """Generate QR code for authenticator apps
         
         Args:
             secret: TOTP secret. If None, uses loaded/generated secret.
-            name: Account name to show in Google Authenticator
+            name: Account name to show in authenticator app
             issuer: Issuer name
             
         Returns:
@@ -222,7 +224,7 @@ class TOTPAuth:
         """Verify TOTP code
         
         Args:
-            code: 6-digit code from Google Authenticator
+            code: 6-digit code from authenticator app
             secret: TOTP secret. If None, uses loaded secret.
             
         Returns:
