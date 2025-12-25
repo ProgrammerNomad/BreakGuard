@@ -1,5 +1,13 @@
 # BreakGuard - Your Health Guardian
 
+![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
+![Platform](https://img.shields.io/badge/Platform-Windows-blue.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+![GitHub stars](https://img.shields.io/github/stars/ProgrammerNomad/BreakGuard?style=social)
+![GitHub forks](https://img.shields.io/github/forks/ProgrammerNomad/BreakGuard?style=social)
+![GitHub issues](https://img.shields.io/github/issues/ProgrammerNomad/BreakGuard)
+![Status](https://img.shields.io/badge/Status-Active-brightgreen.svg)
+
 **Enforce healthy work breaks with unbreakable discipline.**
 
 BreakGuard is a Windows application that forces you to take regular breaks during long working hours. It locks your screen, controls your monitor via IoT, and requires secure two-factor authentication to unlock - making it impossible to skip breaks.
