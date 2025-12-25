@@ -190,6 +190,8 @@ class LockScreen(QWidget):
         self.auth_stack = QStackedWidget()
         self.auth_stack.setMaximumWidth(400)
         self.auth_stack.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        # Force transparent background on stack widget
+        self.auth_stack.setStyleSheet("QStackedWidget { background: transparent; }")
         
         # TOTP Page (Index 0)
         if self.config.is_totp_enabled():
@@ -232,7 +234,7 @@ class LockScreen(QWidget):
     def _create_totp_page(self) -> QFrame:
         """Create TOTP input page"""
         frame = QFrame()
-        # Force transparent background and ensure text is visible
+        # Force transparent/dark background for visibility
         frame.setStyleSheet("""
             QFrame { background: transparent; border: none; }
             QLabel { color: #e0e0e0; background: transparent; }
@@ -258,18 +260,20 @@ class LockScreen(QWidget):
             input_box.setFixedSize(40, 50)
             input_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
             input_box.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
-            # Explicitly set background and text color to override any theme defaults
+            # Dark background with bright text for maximum visibility
             input_box.setStyleSheet("""
                 QLineEdit {
-                    background-color: rgba(255, 255, 255, 20);
-                    border: 1px solid rgba(255, 255, 255, 50);
-                    border-radius: 5px;
+                    background-color: rgba(0, 0, 0, 0.4);
+                    border: 2px solid rgba(0, 212, 255, 0.6);
+                    border-radius: 8px;
                     color: #ffffff;
                     selection-background-color: #00d4ff;
+                    padding: 2px;
                 }
                 QLineEdit:focus {
                     border: 2px solid #00d4ff;
-                    background-color: rgba(255, 255, 255, 40);
+                    background-color: rgba(0, 0, 0, 0.6);
+                    box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
                 }
             """)
             input_box.textChanged.connect(lambda text, idx=i: self._on_digit_entered(text, idx))
@@ -362,10 +366,23 @@ class LockScreen(QWidget):
             self.otp_inputs[0].setFocus()
     
     def eventFilter(self, obj, event):
-        """Event filter for paste support"""
+        """Event filter for paste and backspace support"""
         if event.type() == QKeyEvent.Type.KeyPress:
+            # Handle backspace key
+            if event.key() == Qt.Key.Key_Backspace:
+                if obj in self.otp_inputs:
+                    current_index = self.otp_inputs.index(obj)
+                    if obj.text():
+                        # Clear current box
+                        obj.clear()
+                    elif current_index > 0:
+                        # Move to previous box and clear it
+                        self.otp_inputs[current_index - 1].clear()
+                        self.otp_inputs[current_index - 1].setFocus()
+                    return True
+            
+            # Handle paste event
             if event.matches(QKeySequence.StandardKey.Paste):
-                # Handle paste event
                 clipboard = QApplication.clipboard()
                 text = clipboard.text().strip()
                 

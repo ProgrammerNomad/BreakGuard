@@ -79,9 +79,23 @@ class BreakGuardApp(QObject):
         # Warning timer fires once
         self.warning_timer.timeout.connect(self._show_warning)
         self.warning_timer.setSingleShot(True)
-        
+
         # Icon blink timer
         self.icon_blink_timer.timeout.connect(self._blink_icon)
+
+    @staticmethod
+    def _format_duration(seconds: int) -> str:
+        """Return human-friendly duration string for tray and dialogs"""
+        total = max(0, seconds)
+        minutes, rem_seconds = divmod(total, 60)
+        parts = []
+        if minutes:
+            parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+        if rem_seconds:
+            parts.append(f"{rem_seconds} second{'s' if rem_seconds != 1 else ''}")
+        if not parts:
+            return "less than a minute"
+        return " ".join(parts)
     
     def _setup_tray_icon(self) -> None:
         """Create system tray icon and menu"""
@@ -228,16 +242,25 @@ class BreakGuardApp(QObject):
             if not self.state_manager.is_state(AppState.WARNING):
                 self.state_manager.transition_to(AppState.WARNING)
             
-            warning_mins = self.config.get('warning_before_minutes', 5)
-            work_interval = self.config.get('work_interval_minutes', 60)
+            warning_config_mins = self.config.get('warning_before_minutes', 5)
             max_snooze = self.config.get('max_snooze_count', 1)
-            
-            # Calculate work duration (approximate)
-            work_duration = max(0, work_interval - warning_mins)
-            
+            remaining_seconds = max(0, self.time_remaining_seconds)
+            rounded_minutes = (remaining_seconds + 59) // 60 if remaining_seconds else 1
+            warning_mins = max(1, min(warning_config_mins, rounded_minutes))
+            total_work_seconds = self.config.get_work_interval_seconds()
+            worked_seconds = max(0, total_work_seconds - remaining_seconds)
+            work_duration = worked_seconds // 60
+            time_text = self._format_duration(remaining_seconds)
+
             # Show dialog
             can_snooze = self.snooze_count < max_snooze
-            self.warning_dialog = WarningDialog(warning_mins, work_duration, can_snooze)
+            self.warning_dialog = WarningDialog(
+                warning_mins,
+                work_duration,
+                can_snooze,
+                seconds_remaining=remaining_seconds,
+                time_text=time_text
+            )
             self.warning_dialog.snooze_requested.connect(self._on_snooze)
             self.warning_dialog.show()
             
@@ -245,7 +268,7 @@ class BreakGuardApp(QObject):
             if self.tray_icon:
                 self.tray_icon.showMessage(
                     "⚠️ Break Time Soon",
-                    f"Break in {warning_mins} minutes - save your work!",
+                    f"Break in {time_text} - save your work!",
                     QSystemTrayIcon.MessageIcon.Warning,
                     5000
                 )

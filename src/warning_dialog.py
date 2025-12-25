@@ -16,13 +16,16 @@ class WarningDialog(QDialog):
     
     snooze_requested = pyqtSignal()
     
-    def __init__(self, minutes_remaining: int, work_duration: int, can_snooze: bool = True):
+    def __init__(self, minutes_remaining: int, work_duration: int, can_snooze: bool = True,
+                 seconds_remaining: int | None = None, time_text: str | None = None):
         """Initialize warning dialog
         
         Args:
             minutes_remaining: Minutes until lock
             work_duration: Minutes worked so far
             can_snooze: Whether snooze is allowed
+            seconds_remaining: Seconds until lock (for timers)
+            time_text: Pre-formatted time remaining text
         """
         super().__init__()
         
@@ -32,6 +35,8 @@ class WarningDialog(QDialog):
         self.setMaximumSize(600, 500)
         
         self.setStyleSheet(load_stylesheet())
+        self.seconds_remaining = seconds_remaining if seconds_remaining is not None else max(minutes_remaining, 1) * 60
+        display_text = time_text or self._format_minutes(minutes_remaining)
         
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
@@ -50,7 +55,7 @@ class WarningDialog(QDialog):
         layout.addLayout(header_layout)
         
         # Message
-        msg_label = QLabel(f"Your screen will lock in {minutes_remaining} minutes.")
+        msg_label = QLabel(f"Your screen will lock in {display_text}.")
         msg_label.setProperty("class", "body")
         layout.addWidget(msg_label)
         
@@ -61,7 +66,7 @@ class WarningDialog(QDialog):
         info_layout.setContentsMargins(15, 15, 15, 15)
         info_layout.setSpacing(5)
         
-        next_break = datetime.now() + timedelta(minutes=minutes_remaining)
+        next_break = datetime.now() + timedelta(seconds=self.seconds_remaining)
         
         info_layout.addWidget(QLabel(f"Time worked: {work_duration} minutes"))
         info_layout.addWidget(QLabel(f"Next break at: {next_break.strftime('%I:%M %p')}"))
@@ -102,7 +107,7 @@ class WarningDialog(QDialog):
         # Auto-close timer (close if user doesn't respond before lock)
         self.close_timer = QTimer()
         self.close_timer.timeout.connect(self.accept)
-        self.close_timer.start(minutes_remaining * 60 * 1000)
+        self.close_timer.start(max(1, self.seconds_remaining) * 1000)
         
         # Fade-in animation
         self.setWindowOpacity(0)
@@ -132,6 +137,12 @@ class WarningDialog(QDialog):
         fade_out.finished.connect(lambda: super(WarningDialog, self).accept())
         fade_out.start()
         self.fade_out_animation = fade_out  # Keep reference
+
+    @staticmethod
+    def _format_minutes(minutes: int) -> str:
+        """Return simple minute label for fallback display"""
+        value = max(1, minutes)
+        return f"{value} minute{'s' if value != 1 else ''}"
 
 if __name__ == "__main__":
     from PyQt6.QtWidgets import QApplication
