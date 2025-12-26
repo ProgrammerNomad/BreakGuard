@@ -20,9 +20,14 @@ from theme.theme import load_stylesheet
 
 def setup_logging():
     """Configure application logging"""
-    log_dir = Path(__file__).parent / 'logs'
-    log_dir.mkdir(exist_ok=True)
+    # Import here after src is in path
+    from path_utils import get_logs_dir, ensure_app_data_dirs
     
+    # Ensure app data directories exist
+    ensure_app_data_dirs()
+    
+    # Use user's AppData folder for logs (writable without admin rights)
+    log_dir = get_logs_dir()
     log_file = log_dir / 'breakguard.log'
     
     # Create formatters
@@ -72,9 +77,9 @@ def main():
     parser.add_argument('--settings', action='store_true', help='Open settings')
     args = parser.parse_args()
     
-    # Create data directory if it doesn't exist
-    data_dir = Path(__file__).parent / 'data'
-    data_dir.mkdir(exist_ok=True)
+    # Ensure app data directories exist
+    from path_utils import ensure_app_data_dirs
+    ensure_app_data_dirs()
     
     # High DPI scaling (for PyQt6 compatibility)
     try:
@@ -111,8 +116,8 @@ def main():
     
     # Set application icon
     from PyQt6.QtGui import QIcon
-    assets_dir = Path(__file__).parent / 'assets'
-    icon_path = assets_dir / 'logo.png'
+    from path_utils import get_assets_dir
+    icon_path = get_assets_dir() / 'logo.png'
     if icon_path.exists():
         app.setWindowIcon(QIcon(str(icon_path)))
     else:
@@ -122,7 +127,8 @@ def main():
         ))
     
     # Check if first time setup is needed
-    config_path = Path(__file__).parent / 'config.json'
+    from path_utils import get_config_file
+    config_path = get_config_file()
     
     # Keep references to prevent garbage collection
     global wizard, break_guard, settings

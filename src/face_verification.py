@@ -24,8 +24,8 @@ class FaceVerification:
             data_dir: Directory to store face encodings
         """
         if data_dir is None:
-            base_dir = Path(__file__).parent.parent
-            data_dir = base_dir / 'data'
+            from path_utils import get_data_dir
+            data_dir = get_data_dir()
         
         self.data_dir: Path = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)

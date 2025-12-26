@@ -52,9 +52,9 @@ class ConfigManager:
             config_path: Path to config.json file. If None, uses default location.
         """
         if config_path is None:
-            # Get path relative to main.py
-            base_dir = Path(__file__).parent.parent
-            config_path = base_dir / 'config.json'
+            # Use AppData location (user-writable)
+            from path_utils import get_config_file
+            config_path = get_config_file()
         
         self.config_path: Path = Path(config_path)
         self.config = self._load_config()

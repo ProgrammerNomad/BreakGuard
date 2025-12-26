@@ -56,7 +56,13 @@ class StateManager:
             state: [] for state in AppState
         }
         self._auto_persist = auto_persist
-        self._state_file = state_file or str(Path(__file__).parent.parent / "data" / "app_state.json")
+        
+        # Use AppData location for state file
+        if state_file is None:
+            from path_utils import get_data_dir
+            state_file = str(get_data_dir() / "app_state.json")
+        self._state_file = state_file
+        
         self._additional_data: dict = {}  # Store extra state data (timers, counters, etc.)
         logger.info(f"State manager initialized with state: {initial_state.name}")
     

@@ -20,6 +20,11 @@ wheels/
 .installed.cfg
 *.egg
 
+# PyInstaller build artifacts
+*.spec.bak
+build/
+dist/
+
 # Type checking cache
 .mypy_cache/
 
@@ -42,8 +47,9 @@ env/
 config.json
 data/
 *.log
+logs/
 
-# OS
-.DS_Store
-Thumbs.db
-desktop.ini
+# Installer build artifacts (keep installer.iss and breakguard.spec)
+# But ignore the temporary build outputs
+Output/
+*.tmp

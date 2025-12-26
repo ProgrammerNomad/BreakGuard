@@ -133,7 +133,7 @@ BreakGuard integrates with **Tinxy** smart switches to physically control your m
 | Language | Python 3.10+ | Core application |
 | UI Framework | PyQt6 | Modern graphical interface |
 | Authentication | pyotp | TOTP Authenticator (Google, Microsoft, etc.) |
-| Face Recognition | OpenCV + face_recognition | Face verification |
+| Face Recognition | OpenCV Haar Cascade | Face verification |
 | IoT Control | Tinxy REST API | Monitor power control |
 | Startup | Windows Registry | Auto-start on boot |
 | Screen Lock | PyQt6 Fullscreen | Unbreakable lock screen |
@@ -180,7 +180,38 @@ BreakGuard/
 
 ## Installation
 
-### For Non-Technical Users (Easy Way)
+### Recommended: One-Click Installer (No Python Required!)
+
+**The easiest way for end users:**
+
+1. **Download the installer:**
+   - Go to [Releases](https://github.com/ProgrammerNomad/BreakGuard/releases/latest)
+   - Download `BreakGuard_Setup_v1.0.0.exe`
+
+2. **Run the installer:**
+   - Double-click the downloaded file
+   - Follow setup wizard
+   - Choose install location
+   - Select options (Start with Windows, Desktop shortcut)
+
+3. **Complete first-time setup:**
+   - BreakGuard opens automatically
+   - Configure work intervals
+   - Set up authentication
+   - Done! 🎉
+
+** Benefits:**
+- No Python installation needed
+- Automatic updates notification
+- Professional Windows installer
+- Preserves settings during upgrades
+- Clean uninstall option
+
+---
+
+### 🔧 Alternative: Install from Source (For Developers)
+
+#### Quick Start for Non-Technical Users
 
 1. **Install Python 3.10 or higher**
    - Download from [python.org](https://www.python.org/downloads/)
@@ -211,7 +242,7 @@ BreakGuard/
    - System tray icon appears
    - Timer starts automatically
 
-### For Developers (Command Line)
+#### Command Line Installation (For Developers)
 
 ```bash
 # Clone repository
@@ -237,8 +268,7 @@ The following packages will be installed:
 - `PyQt6` - Modern GUI framework
 - `pyotp` - TOTP Authenticator support
 - `qrcode` - QR code generation
-- `opencv-python` - Face recognition
-- `face-recognition` - Face matching
+- `opencv-python` - Face detection using Haar Cascade
 - `pillow` - Image processing
 - `requests` - Tinxy API calls
 - `cryptography` - Secure storage
@@ -339,18 +369,18 @@ Right-click the tray icon to access:
 
 ```
 BreakGuard
-  ├─ 🟢 Active (18 min remaining)      [Status display]
-  ├─ ⚡ Quick Settings                  [Submenu]
-  │   ├─ 🕒 30 minutes
-  │   ├─ 🕒 1 hour
-  │   ├─ 🕒 90 minutes
-  │   └─ 🕒 2 hours
-  ├─ ⏸️ Pause Timer                     [Pause/Resume with notification]
-  ├─ ⚙️ Settings                        [Open settings window]
-  ├─ 🐛 Debug Info                      [System diagnostics]
-  ├─ 🔄 Run Setup Again                 [Re-run setup wizard]
-  ├─ ⏭️ Skip Current Break              [Requires authentication]
-  └─ 🚪 Exit BreakGuard                 [Close application]
+  ├─ Active (18 min remaining)      [Status display]
+  ├─ Quick Settings                  [Submenu]
+  │   ├─ 30 minutes
+  │   ├─ 1 hour
+  │   ├─ 90 minutes
+  │   └─ 2 hours
+  ├─ Pause Timer                     [Pause/Resume with notification]
+  ├─ Settings                        [Open settings window]
+  ├─ Debug Info                      [System diagnostics]
+  ├─ Run Setup Again                 [Re-run setup wizard]
+  ├─ Skip Current Break              [Requires authentication]
+  └─ Exit BreakGuard                 [Close application]
 ```
 
 **New Features:**

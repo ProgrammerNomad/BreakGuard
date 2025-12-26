@@ -183,9 +183,9 @@ class WindowsStartup:
             shortcut_path = os.path.join(start_menu, "BreakGuard.lnk")
             
             # Paths
-            main_py = Path(__file__).parent.parent / 'main.py'
-            assets_dir = Path(__file__).parent.parent / 'assets'
-            icon_path = assets_dir / 'logo.ico'
+            from path_utils import get_app_dir, get_assets_dir
+            main_py = get_app_dir() / 'main.py'
+            icon_path = get_assets_dir() / 'logo.ico'
             
             # Target
             if getattr(sys, 'frozen', False):

@@ -614,10 +614,31 @@ class SettingsWindow(QWidget):
         title_label.setStyleSheet("font-size: 24px; font-weight: bold; margin-top: 20px;")
         layout.addWidget(title_label)
         
-        version_label = QLabel("Version 1.0.0")
+        # Version with update check
+        from update_checker import UpdateChecker
+        self.update_checker = UpdateChecker()
+        version_info = self.update_checker.get_version_info()
+        
+        version_label = QLabel(f"Version {version_info['version']}")
         version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         version_label.setStyleSheet("color: #888;")
         layout.addWidget(version_label)
+        
+        # Check for updates button
+        self.check_updates_btn = QPushButton("🔄 Check for Updates")
+        self.check_updates_btn.setMinimumWidth(200)
+        self.check_updates_btn.setProperty("class", "primary-btn")
+        self.check_updates_btn.clicked.connect(self._check_for_updates)
+        self.check_updates_btn.setAccessibleName("Check for Updates")
+        self.check_updates_btn.setToolTip("Check if a new version is available")
+        layout.addWidget(self.check_updates_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        # Update status label
+        self.update_status_label = QLabel("")
+        self.update_status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.update_status_label.setWordWrap(True)
+        self.update_status_label.setStyleSheet("margin: 5px 20px;")
+        layout.addWidget(self.update_status_label)
         
         # Description
         desc_label = QLabel(
@@ -753,4 +774,65 @@ class SettingsWindow(QWidget):
                     self,
                     "Import Error",
                     f"Failed to import settings:\n{str(e)}"
-                )
+                )    
+    def _check_for_updates(self):
+        """Check for updates from GitHub"""
+        self.update_status_label.setText("⏳ Checking for updates...")
+        self.update_status_label.setStyleSheet("color: #888; margin: 5px 20px;")
+        self.check_updates_btn.setEnabled(False)
+        QApplication.processEvents()
+        
+        try:
+            update_info = self.update_checker.check_for_updates()
+            
+            if not update_info:
+                self.update_status_label.setText("❌ Failed to check for updates. Please check your internet connection.")
+                self.update_status_label.setStyleSheet("color: #dc3545; margin: 5px 20px;")
+            elif update_info['available']:
+                # New version available
+                msg = f"🎉 New version available: {update_info['latest_version']}\n"
+                msg += f"Current version: {update_info['current_version']}\n\n"
+                msg += "Changelog:\n" + "\n".join(f"• {item}" for item in update_info['changelog'][:5])
+                
+                self.update_status_label.setText(msg)
+                self.update_status_label.setStyleSheet("color: #28a745; margin: 5px 20px;")
+                
+                # Show download button
+                download_btn = QPushButton("⬇️ Download Latest Version")
+                download_btn.setMinimumWidth(200)
+                download_btn.setProperty("class", "primary-btn")
+                download_btn.clicked.connect(lambda: self._open_download_page(update_info['download_url']))
+                
+                # Find the about tab layout and insert button
+                about_tab = self.sender().parent() if hasattr(self.sender(), 'parent') else None
+                if about_tab:
+                    layout = about_tab.layout()
+                    if layout:
+                        # Insert after update status label
+                        index = layout.indexOf(self.update_status_label)
+                        if index >= 0:
+                            layout.insertWidget(index + 1, download_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+            else:
+                # Up to date
+                self.update_status_label.setText(f"✅ You're running the latest version ({update_info['current_version']})")
+                self.update_status_label.setStyleSheet("color: #28a745; margin: 5px 20px;")
+        
+        except Exception as e:
+            self.update_status_label.setText(f"❌ Error checking updates: {str(e)}")
+            self.update_status_label.setStyleSheet("color: #dc3545; margin: 5px 20px;")
+        
+        finally:
+            self.check_updates_btn.setEnabled(True)
+    
+    def _open_download_page(self, url: str):
+        """Open GitHub releases page in browser"""
+        QDesktopServices.openUrl(QUrl(url))
+        QMessageBox.information(
+            self,
+            "Download Instructions",
+            "1. Download the new BreakGuard installer from GitHub\n"
+            "2. Close BreakGuard completely (right-click tray icon > Exit)\n"
+            "3. Run the new installer\n"
+            "4. Your settings will be preserved automatically\n\n"
+            "Opening browser now..."
+        )

@@ -102,8 +102,8 @@ class BreakGuardApp(QObject):
         self.tray_icon = QSystemTrayIcon()
         
         # Load icon
-        assets_dir = Path(__file__).parent.parent / 'assets'
-        icon_path = assets_dir / 'logo.png'
+        from path_utils import get_assets_dir
+        icon_path = get_assets_dir() / 'logo.png'
         
         if icon_path.exists():
             self.tray_icon.setIcon(QIcon(str(icon_path)))

@@ -1477,6 +1477,9 @@ class SetupWizard(QWizard):
                 startup.add_to_startup()
             
             self.setup_completed.emit()
+            
+            # Close the wizard after setup completes
+            self.close()
     
     def closeEvent(self, event):
         """Ensure camera is stopped when wizard closes"""
